@@ -1,0 +1,16 @@
+{
+	"name": "chesscheata-server",
+	"version": "0.1.0",
+	"description": "",
+	"author": "",
+	"license": "ISC",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"start": "node ."
+	},
+	"dependencies": {
+		"@types/jquery": "^3.5.14",
+		"socket.io": "^4.5.1"
+	}
+}

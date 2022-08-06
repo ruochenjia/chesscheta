@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<meta http-equiv="Referrer-Policy" content="no-referrer" />
+		<meta name="referrer" content="no-referrer" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1" />
+		<base href="/" />
+		<link rel="icon" type="image/x-icon" href="favicon.ico" />
+		<link rel="stylesheet" type="text/css" href="lib/chessboard-1.0.0.min.css" />
+		<script type="text/javascript" src="https://webalert.pages.dev/webalert.js" crossorigin="anonymous"></script>
+		<script type="text/javascript" src="lib/jquery-3.6.0.min.js"></script>
+		<script type="text/javascript" src="lib/chessboard-1.0.0.min.js"></script>
+		<title>ChessCheata</title>
+		<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+@font-face {
+	font-family: "Ubuntu";
+	font-style: normal;
+	src: url("res/ubuntu.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: "Ubuntu Mono";
+	font-style: normal;
+	src: url("res/ubuntu-mono.ttf") format("truetype");
+}
+
+body {
+	position: absolute;
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	font-size: 14px;
+	font-family: "Ubuntu";
+	font-weight: 500;
+	font-style: normal;
+	color: #303030;
+	background-color: #ffffff;
+}
+
+span {
+	display: inline-block;
+}
+
+#header {
+	position: relative;
+	display: block;
+	width: calc(100% - 20px);
+	height: fit-content;
+	padding: 10px;
+	border-bottom-style: solid;
+	border-bottom-width: 3px;
+	border-bottom-color: #303030;
+}
+
+#logo {
+	position: relative;
+	display: block;
+	width: fit-content;
+	height: fit-content;
+	line-height: 50px;
+	font-size: 36px;
+	font-weight: 600;
+	user-select: none;
+}
+
+#online-players {
+	position: absolute;
+	display: block;
+	width: fit-content;
+	height: fit-content;
+	right: 10px;
+	top: 10px;
+	line-height: 50px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+#screen-container {
+	position: absolute;
+	display: block;
+	width: 100%;
+	height: calc(100% - 80px);
+	top: 80px;
+}
+
+.screen {
+	position: absolute;
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+}
+
+#game-screen-container {
+	position: relative;
+	display: table;
+	width: fit-content;
+	height: 100%;
+	margin: auto;
+}
+
+#board-container {
+	position: relative;
+	display: table-cell;
+	width: fit-content;
+	height: fit-content;
+	vertical-align: middle;
+}
+
+#board {
+	position: relative;
+	display: inline-block;
+	width: 600px;
+	height: 600px;
+	vertical-align: top;
+	touch-action: none;
+}
+
+@media all and (max-width: 610px) {
+	#game-screen-container, #board-container {
+		display: block;
+		width: 100%;
+	}
+
+	#board {
+		width: calc(100% - 10px);
+		margin-left: 5px;
+		margin-right: 5px;
+	}
+}
+
+@media all and (max-height: 610px) {
+	#board {
+		height: calc(100% - 10px);
+		margin-top: 5px;
+		margin-bottom: 5px;
+	}
+}
+
+.highlight-white {
+	box-shadow: inset 0 0 3px 3px #008000;
+}
+
+.highlight-black {
+	box-shadow: inset 0 0 3px 3px #0000ff;
+}
+
+.highlight-hint {
+	box-shadow: inset 0 0 3px 3px #ff0000;
+}
+
+.highlight-moveable {
+	box-shadow: inset 0 0 3px 3px #303030;
+}
+
+.black-3c85d {
+	color: #b5f0d9;
+	background-color: #63b588;
+}
+
+.white-1e1d7 {
+	color: #63b588;
+	background-color: #b5f0d9;
+}
+
+#control-menu {
+	position: relative;
+	display: inline-block;
+	width: 200px;
+	height: 560px;
+	padding: 20px;
+	vertical-align: top;
+}
+
+#local, #sp {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: fit-content;
+}
+
+@media all and (max-width: 843px) {
+	#control-menu {
+		display: block;
+		margin: auto;
+	}
+}
+
+.block-title {
+	position: relative;
+	display: block;
+	width: fit-content;
+	height: fit-content;
+	margin: auto;
+	line-height: 24px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.progress-bar {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 20px;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #303030;
+	border-radius: 25px;
+}
+
+.progress-bar div {
+	position: absolute;
+	display: block;
+	width: 50%;
+	height: 100%;
+	background-color: #c0c0c0;
+	border-radius: 25px;
+}
+
+#menu {
+	position: absolute;
+	display: block;
+	width: 300px;
+	height: 300px;
+	top: 50%;
+	left: 50%;
+	margin-top: -150px;
+	margin-left: -150px;
+}
+
+.button {
+	position: relative;
+	width: fit-content;
+	height: fit-content;
+	padding: 10px;
+	cursor: pointer;
+	color: #ffffff;
+	background-color: #101010;
+	user-select: none;
+	text-decoration: none;
+	text-align: center;
+}
+
+.button:hover {
+	background-color: #303030;
+}
+
+.button:active {
+	background-color: #505050;
+}
+
+.menu {
+	width: 280px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.large {
+	font-size: 24px;
+}
+
+#option-menu {
+	position: relative;
+	display: block;
+	width: 300px;
+	height: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 100px;
+}
+
+#option-menu input[type="radio"] {
+	position: relative;
+	width: fit-content;
+	height: fit-content;
+}
+
+#option-menu label {
+	position: relative;
+	width: fit-content;
+	height: 20px;
+	line-height: 20px;
+	font-size: 16px;
+	vertical-align: middle;
+}
+
+#option-menu select {
+	position: relative;
+	width: fit-content;
+	height: fit-content;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	padding: 2px;
+	outline: none;
+	color: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	font-family: inherit;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #808080;
+	border-radius: 10px;
+	background-color: rgba(0, 0, 0, 0);
+}
+
+#option-menu select:focus {
+	border-color: #303030;
+}
+
+.option-menu {
+	width: 200px;
+	font-size: 16px;
+	font-weight: 600;
+	margin: auto;
+}
+		</style>
+	</head>
+	<body>
+		<div id="header">
+			<div id="logo">Chess<i>Cheata</i></div>
+			<div id="online-players">Online Players: <span id="players">0</span></div>
+		</div>
+		<div id="screen-container">
+			<div id="menu-screen" class="screen">
+				<div id="menu">
+					<div class="large block-title">Game Mode</div>
+					<div id="single-player" class="menu button">Single Player</div>
+					<div id="local-multiplayer" class="menu button">Local Multiplayer</div>
+					<div id="online-multiplayer" class="menu button">Online Multiplayer</div>
+				</div>
+			</div>
+			<div id="option-screen" class="screen" style="display: none;">
+				<div id="option-menu">
+					<div class="large block-title">Color</div>
+					<input type="radio" name="color" id="random" value="r" checked="true" />
+					<label for="random">Random</label>
+					<br />
+					<input type="radio" name="color" id="white" value="w" />
+					<label for="white">White</label>
+					<br />
+					<input type="radio" name="color" id="black" value="b" />
+					<label for="black">Black</label>
+					<div class="large block-title" style="margin-top: 40px;">AI Options</div>
+					<label for="search-time">Search Time (s):</label>
+					<select id="search-time">
+						<option value="1">1</option>
+						<option value="2" selected="true">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
+						<option value="9">9</option>
+						<option value="10">10</option>
+					</select>
+					<br />
+					<label for="search-depth">Search Depth:</label>
+					<select id="search-depth">
+						<option value="2">2</option>
+						<option value="4">4</option>
+						<option value="6">6</option>
+						<option value="8">8</option>
+						<option value="10">10</option>
+						<option value="12">12</option>
+						<option value="15">15</option>
+						<option value="0" selected="true">Until timeout</option>
+					</select>
+					<div id="play" class="option-menu button" style="margin-top: 60px;">Play</div>
+				</div>
+			</div>
+			<div id="game-screen" class="screen">
+				<div id="game-screen-container">
+					<div id="board-container">
+						<div id="board"></div>
+						<div id="control-menu">
+							<div class="block-title">Advantage</div>
+							<div style="margin-top: 10px;"><span id="advantageColor">Neither side</span> has the advantage (+<span id="advantageNumber">0</span>).</div>
+							<div class="progress-bar" style="margin-top: 10px;">
+								<div id="advantageBar"></div>
+							</div>
+							<div class="block-title" style="margin-top: 20px;">Status</div>
+							<div id="status" style="margin-top: 10px;">No check, checkmate, or draw.</div>
+							<div id="local" style="display: none;">
+								<span class="button" id="undo" style="margin-top: 10px;">Undo</span>
+								<span class="button" id="redo" style="margin-top: 10px;">Redo</span>
+								<br />
+								<div id="sp" style="display: none;">
+									<input type="checkbox" id="show-hint" style="margin-top: 10px;" />
+									<label for="show-hint">Show Suggested Move</label>
+								</div>
+								<span class="button" id="restart" style="margin-top: 10px;">Restart</span>
+								<span class="button" id="menu-btn" style="margin-top: 10px;">Menu</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script type="module">
+"use strict";
+
+import "./main.js";
+		</script>
+	</body>
+</html>
