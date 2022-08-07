@@ -39,7 +39,7 @@ function getContentType(rPath) {
 		case ".jpeg":
 			return "image/jpeg";
 		case ".svg":
-			return "image/svg";
+			return "image/svg+xml";
 		case ".ico":
 			return "image/x-icon";
 		case ".wasm":

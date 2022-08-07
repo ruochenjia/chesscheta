@@ -7,7 +7,8 @@ const config = {
 	headers,
 	allowedHosts: [
 		"chesscheata.gq",
-		"www.chesscheata.gq"
+		"www.chesscheata.gq",
+		"localhost"
 	]
 };
 

@@ -1,8 +1,8 @@
 {
 	"manifest_version": 2,
-	"name": "WhiteSpider Chess AI",
-	"short_name": "Chess AI",
-	"description": "",
+	"name": "ChessCheata",
+	"short_name": "ChessCheata",
+	"description": "Online multiplayer chess game",
 	"version": "0.1.0",
 	"display": "fullscreen",
 	"orientation": "any",
