@@ -1,5 +1,4 @@
 import http from "http";
-import https from "https";
 import fs from "fs";
 import path from "path";
 import { Server } from "socket.io";
@@ -103,28 +102,16 @@ function verifyHost(request, response) {
 	let host = request.headers.host;
 	if (!config.allowedHosts.includes(host)) {
 		// prevent unauthorized hosts
-		response.writeHead(301, "Moved Permanently", { Location: `https://${config.allowedHosts[0]}${request.url}` });
+		response.writeHead(301, "Moved Permanently", { Location: `http://${config.allowedHosts[0]}${request.url}` });
 		response.write("Moved Permanently");
 		response.end();
+		return false;
 	}
 
 	return true;
 }
 
 const httpServer = http.createServer({}, (request, response) => {
-	if (!verifyHost(request, response))
-		return;
-
-	// enforce https
-	response.writeHead(301, "Moved Permanently", { Location: `https://${request.headers.host}${request.url}` });
-	response.write("Moved Permanently");
-	response.end();
-});
-
-const httpsServer = https.createServer({
-	key: config.privKey,
-	cert: config.cert
-}, (request, response) => {
 	if (!verifyHost(request, response))
 		return;
 
@@ -154,18 +141,15 @@ const httpsServer = https.createServer({
 	} else notFound(response);
 });
 
-
-httpServer.listen(config.httpPort, config.address);
-httpsServer.listen(config.httpsPort, config.address, () => {
+httpServer.listen(config.httpPort, config.address, () => {
 	console.log("HTTP server started");
 });
 
 
 
-
 // socket.io server
 
-const io = new Server(httpsServer, {
+const io = new Server(httpServer, {
 	cors: {
 		origin: [],
 		credentials: true
