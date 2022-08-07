@@ -1,9 +1,9 @@
 import http from "http";
+import https from "https";
 import fs from "fs";
 import path from "path";
 import { Server } from "socket.io";
 import { config } from "./config.js";
-
 
 // log mod
 (() => {
@@ -13,22 +13,6 @@ import { config } from "./config.js";
 		log.apply(console, [new Date().toLocaleString()].concat(args));
 	};
 })();
-
-
-
-
-// static headers
-const headers = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET",
-	"Access-Control-Allow-Credentials": "true",
-	"Allow-Chrome": "false",
-	"Cross-Origin-Embedder-Policy": "require-corp",
-	"Cross-Origin-Opener-Policy": "same-origin",
-	"Referrer-Policy": "no-referrer",
-	"X-Content-Type-Options": "nosniff",
-	"X-Frame-Options": "SAMEORIGIN"
-};
 
 /**
  * @param {String} rPath 
@@ -100,18 +84,50 @@ function notFound(response) {
 	let doc = "./static/404.html";
 	if (fs.existsSync(doc)) {
 		let file = fs.readFileSync(doc, { encoding: "utf-8" });
-		let head = { ...headers };
+		let head = { ...config.headers };
 		head["Content-Type"] = "application/xhtml+xml"
 		response.writeHead(404, "", head);
 		response.end(file, "utf-8");
 	} else {
-		response.writeHead(404, "Not found", headers);
+		response.writeHead(404, "Not found", config.headers);
 		response.write("Not found");
 		response.end();
 	}
 }
 
-const server = http.createServer((request, response) => {
+/**
+ * @param {http.IncomingMessage} request 
+ * @param {http.ServerResponse} response
+ */
+function verifyHost(request, response) {
+	let host = request.headers.host;
+	if (!config.allowedHosts.includes(host)) {
+		// prevent unauthorized hosts
+		response.writeHead(301, "Moved Permanently", { Location: `https://${config.allowedHosts[0]}${request.url}` });
+		response.write("Moved Permanently");
+		response.end();
+	}
+
+	return true;
+}
+
+const httpServer = http.createServer({}, (request, response) => {
+	if (!verifyHost(request, response))
+		return;
+
+	// enforce https
+	response.writeHead(301, "Moved Permanently", { Location: `https://${request.headers.host}${request.url}` });
+	response.write("Moved Permanently");
+	response.end();
+});
+
+const httpsServer = https.createServer({
+	key: config.privKey,
+	cert: config.cert
+}, (request, response) => {
+	if (!verifyHost(request, response))
+		return;
+
 	let path = "./static" + request.url;
 
 	if (fs.existsSync(path)) {
@@ -129,7 +145,7 @@ const server = http.createServer((request, response) => {
 		}
 
 		let file = fs.readFileSync(path);
-		let head = { ...headers };
+		let head = { ...config.headers };
 		head["Content-Type"] = getContentType(path);
 
 		response.writeHead(200, "", head);
@@ -138,7 +154,18 @@ const server = http.createServer((request, response) => {
 	} else notFound(response);
 });
 
-const io = new Server(server, {
+
+httpServer.listen(config.httpPort, config.address);
+httpsServer.listen(config.httpsPort, config.address, () => {
+	console.log("HTTP server started");
+});
+
+
+
+
+// socket.io server
+
+const io = new Server(httpsServer, {
 	cors: {
 		origin: [],
 		credentials: true
@@ -192,8 +219,3 @@ io.on("connection", (socket) => {
 		socket.emit("users", clients);
 	});
 });
-
-server.listen(config.port, config.address, () => {
-	console.log("HTTP server started");
-});
-
