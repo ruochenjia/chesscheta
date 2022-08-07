@@ -180,22 +180,22 @@ function verifyClientId(id) {
 }
 
 io.on("connection", (socket) => {
-	console.log("Player connected");
+	console.log(`Player connected from ${socket.handshake.address}`);
 
 	socket.emit("register");
 	socket.on("client_id", (...args) => {
 		let id = args[0];
 		if (verifyClientId(id)) {
 			if (!clients.includes(id)) {
-				console.log("Received client id: ", id);
+				console.log(`Received client id '${id}' from ${socket.handshake.address}`);
 				clients.push(id);
 				socket.on("disconnect", () => {
-					console.log("Player " + id + " disconnected");
+					console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
 					clients.remove(id);
 				});
 			}
 		} else {
-			console.log(`Invalid client id '${id}' detected, rejecting client`);
+			console.log(`Invalid client id '${id}' detected from ${socket.handshake.address}, rejecting client`);
 			socket.emit("invalid_id");
 		}
 	});

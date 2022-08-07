@@ -9,7 +9,6 @@
 		<base href="/" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<link rel="manifest" type="application/json" href="manifest.json" />
-		<link rel="stylesheet" type="text/css" href="lib/chessboard-1.0.0.min.css" />
 		<script type="text/javascript" src="https://webalert.pages.dev/webalert.js" crossorigin="anonymous"></script>
 		<script type="text/javascript" src="lib/jquery-3.6.0.min.js"></script>
 		<script type="text/javascript" src="lib/chessboard-1.0.0.min.js"></script>
@@ -135,6 +134,8 @@ span {
 	height: 600px;
 	vertical-align: top;
 	touch-action: none;
+	transform: perspective(900px) rotateX(20deg) scale(0.8);
+	box-shadow: 0px 20px 100px #555;
 }
 
 @media all and (max-width: 610px) {
@@ -159,29 +160,89 @@ span {
 }
 
 .highlight-white {
-	box-shadow: inset 0 0 3px 3px #008000;
+	box-shadow: inset 0px 0px 3px 3px #ff0000;
 }
 
 .highlight-black {
-	box-shadow: inset 0 0 3px 3px #0000ff;
+	box-shadow: inset 0px 0px 3px 3px #0000ff;
 }
 
 .highlight-hint {
-	box-shadow: inset 0 0 3px 3px #ff0000;
+	box-shadow: inset 0px 0px 3px 3px #ffff00;
 }
 
 .highlight-moveable {
-	box-shadow: inset 0 0 3px 3px #303030;
+	box-shadow: inset 0px 0px 3px 3px #008000;
 }
 
-.black-3c85d {
-	color: #b5f0d9;
-	background-color: #63b588;
+.chessboard-63f37 {
+	position: absolute;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.board-b72b1 {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-style: solid;
+	border-width: 2px;
+	border-color: #303030;
+}
+
+.row-5277c {
+	position: relative;
+	display: flex;
+	width: fit-content;
+	height: fit-content;
+}
+
+.square-55d63, .piece-417db {
+	position: relative;
+	display: block;
+}
+
+.spare-pieces-7492f {
+	position: relative;
+	display: flex;
+	width: fit-content;
+	height: fit-content;
+}
+
+.clearfix-7da63 {
+	clear: both;
 }
 
 .white-1e1d7 {
-	color: #63b588;
-	background-color: #b5f0d9;
+	color: #b58863;
+	background-color: #f0d9b5;
+}
+
+.black-3c85d {
+	color: #f0d9b5;
+	background-color: #b58863;
+}
+
+.highlight1-32417, .highlight2-9c5d2 {
+	box-shadow: inset 0px 0px 3px 3px #808080;
+}
+
+.notation-322f9 {
+	position: absolute;
+	cursor: default;
+	font-size: 14px;
+}
+
+.alpha-d2270 {
+	bottom: 1px;
+	right: 3px;
+}
+
+.numeric-fc462 {
+	top: 2px;
+	left: 2px;
 }
 
 #control-menu {
@@ -256,7 +317,7 @@ span {
 	padding: 10px;
 	cursor: pointer;
 	color: #ffffff;
-	background-color: #101010;
+	background-color: #202020;
 	user-select: none;
 	text-decoration: none;
 	text-align: center;
@@ -353,7 +414,7 @@ span {
 					<div id="online-multiplayer" class="menu button">Online Multiplayer</div>
 				</div>
 			</div>
-			<div id="option-screen" class="screen" style="display: none;">
+			<div id="option-screen" class="screen" style="visibility: hidden;">
 				<div id="option-menu">
 					<div class="large block-title">Color</div>
 					<input type="radio" name="color" id="random" value="r" checked="true" />
@@ -393,7 +454,7 @@ span {
 					<div id="play" class="option-menu button" style="margin-top: 60px;">Play</div>
 				</div>
 			</div>
-			<div id="game-screen" class="screen">
+			<div id="game-screen" class="screen" style="visibility: hidden;">
 				<div id="game-screen-container">
 					<div id="board-container">
 						<div id="board"></div>

@@ -24,13 +24,7 @@ const board = Chessboard("board", {
 	onSnapEnd
 });
 const config = {};
-
-// always hide game screen after chessboard init
-// to get correct display dimension
-$("#game-screen").css("display", "none");
-
-// chessboard resize handler
-$(window).on("resize", board.resize);
+const socket = io();
 
 // engine init
 await engine.init("stockfish");
@@ -42,6 +36,42 @@ engine.write("setoption name UCI_Elo value 2500");
 await engine.grep("uciok");
 engine.write("isready");
 engine.grep("readyok");
+
+// server init
+socket.on("register", () => {
+	let clientId = localStorage.getItem("client_id");
+	if (clientId == null) {
+		clientId = genCliId();
+		localStorage.setItem("client_id", clientId);
+	}
+	socket.emit("client_id", clientId);
+});
+socket.on("invalid_id", () => {
+	let id = genCliId();
+	localStorage.setItem("client_id", id);
+	socket.emit("client_id", id);
+});
+
+// update online players every second
+setInterval(() => {
+	if (socket.connected) {
+		socket.emit("req_users");
+		socket.on("users", (...args) => {
+			$("#players").text(args[0].length);
+		});
+	}
+}, 1000);
+
+
+// register service worker if available
+if ("serviceWorker" in window.navigator) {
+	window.navigator.serviceWorker.register("./sw.js", {
+		scope: "/",
+		type: "module",
+		updateViaCache: "all"
+	});
+}
+
 
 // event listeners
 $("#board").on("touchmove touchend touchstart", (e) => {
@@ -117,11 +147,26 @@ $("#menu-btn").on("click", () => {
 $("#show-hint").on("change", () => {
 	showHint();
 });
+// chessboard resize handler
+$(window).on("resize", resizeBoard);
 
 function changeScreen(id) {
-	$(".screen").css("display", "none");
-	$(id).css("display", "block");
+	$(".screen").css("visibility", "hidden");
+	$(id).css("visibility", "visible");
 }
+
+function resizeBoard() {
+	let width = $("#board").width();
+	let height = $("#board").height();
+
+	if (width != height)
+		$("#board").height(width);
+
+	board.resize();
+}
+
+resizeBoard();
+
 
 function removeHighlights() {
 	$("#board").find(".square-55d63").removeClass("highlight-white");
@@ -319,39 +364,11 @@ function onSnapEnd() {
 	board.position(game.fen());
 }
 
-})();
+function genCliId() {
+	let str = "";
+	for (let i = 0; i < 20; i++)
+		str += Math.floor(Math.random() * 9);
+	return str;
+}
 
-(() => {
-	function genCliId() {
-		let str = "";
-		for (let i = 0; i < 20; i++)
-			str += Math.floor(Math.random() * 9);
-		return str;
-	}
-
-	const socket = io();
-
-	socket.on("register", () => {
-		let clientId = localStorage.getItem("client_id");
-		if (clientId == null) {
-			clientId = genCliId();
-			localStorage.setItem("client_id", clientId);
-		}
-		socket.emit("client_id", clientId);
-	});
-
-	socket.on("invalid_id", () => {
-		let id = genCliId();
-		localStorage.setItem("client_id", id);
-		socket.emit("client_id", id);
-	});
-
-	const timer = setInterval(() => {
-		if (socket.connected) {
-			socket.emit("req_users");
-			socket.on("users", (...args) => {
-				$("#players").text(args[0].length);
-			});
-		}
-	}, 1000);
 })();
