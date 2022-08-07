@@ -10,10 +10,15 @@ async function fetchRe({ request }) {
 	}
 
 	return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers
-    });
+		status: response.status,
+		statusText: response.statusText,
+		headers: (() => {
+			let head = new Headers(response.headers);
+			for (let e of Object.entries(headers))
+				head.set(e[0], e[1]);
+			return head;
+		})()
+	});
 }
 
 self.addEventListener("fetch", (event) => {

@@ -24,7 +24,6 @@ const board = Chessboard("board", {
 	onSnapEnd
 });
 const config = {};
-const socket = io();
 
 // engine init
 await engine.init("stockfish");
@@ -38,6 +37,7 @@ engine.write("isready");
 engine.grep("readyok");
 
 // server init
+const socket = io();
 socket.on("register", () => {
 	let clientId = localStorage.getItem("client_id");
 	if (clientId == null) {
@@ -64,7 +64,7 @@ setInterval(() => {
 
 
 // register service worker if available
-if ("serviceWorker" in window.navigator) {
+if ("serviceWorker" in window.navigator && window.location.hostname != "localhost") {
 	window.navigator.serviceWorker.register("./sw.js", {
 		scope: "/",
 		type: "module",
@@ -181,8 +181,8 @@ function newGame() {
 	config.undoStack = [];
 	board.position(game.fen());
 	removeHighlights();
-	$("#advantageColor").text("Neither side");
-	$("#advantageNumber").text(0);
+	updateAdvantage();
+	$("#status").html("<b>White</b> to move.");
 }
 
 function undo() {
@@ -212,31 +212,49 @@ function updateAdvantage() {
 	}
 	$("#advantageBar").attr({
 		"aria-valuenow": `${-sum}`,
-		style: `width: ${((-sum + 2000) / 4000) * 100}%`
+		style: `width: ${(() => {
+			let v = (-sum + 2000) / 40;
+			if (v > 100)
+				v = 100;
+			if (v < 0)
+				v = 0;
+			return Math.round(v);
+		})()}%`
 	});
 }
 
-function checkStatus(color) {
-	color = color == "w" ? "white" : "black";
+function capitalize(str) {
+	return str[0].toUpperCase() + str.slice(1);
+}
 
+function getStatusMessage(current, next) {
 	if (game.in_checkmate())
-		$("#status").html(`<b>Checkmate!</b> Oops, <b>${color}</b> lost.`);
+		return `<b>Checkmate!</b> <b>${capitalize(current)}</b> won.`
 	else if (game.insufficient_material())
-		$("#status").html(`It's a <b>draw!</b> (Insufficient Material)`);
+		return `<b>Draw!</b> (Insufficient Material)`;
 	else if (game.in_threefold_repetition())
-		$("#status").html(`It's a <b>draw!</b> (Threefold Repetition)`);
+		return `<b>Draw!</b> (Threefold Repetition)`;
 	else if (game.in_stalemate())
-		$("#status").html(`It's a <b>draw!</b> (Stalemate)`);
+		return `<b>Draw!</b> (Stalemate)`;
 	else if (game.in_draw())
-		$("#status").html(`It's a <b>draw!</b> (50-move Rule)`);
-	else if (game.in_check()) {
-		$("#status").html(`Oops, <b>${color}</b> is in <b>check!</b>`);
-		return false;
-	} else {
-		$("#status").html(`No check, checkmate, or draw.`);
-		return false;
-	}
-	return true;
+		return `<b>Draw!</b> (50-move Rule)`;
+	else if (game.in_check())
+		return `<b>${capitalize(next)}</b> to move, and is in <b>check!</b>`;
+	else
+		return `<b>${capitalize(next)}</b> to move.`;
+}
+
+function checkStatus(color) {
+	let current = color == "w" ? "white" : "black";
+	let next = color == "w" ? "black" : "white";
+	let msg = getStatusMessage(current, next);
+
+	$("#status").html(msg);
+
+	if (game.game_over()) {
+		alert(msg, "Game Over");
+		return true;
+	} else return false;
 }
 
 async function getBestMove(color) {

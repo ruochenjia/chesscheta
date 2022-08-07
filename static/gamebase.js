@@ -109,9 +109,9 @@ const pstSelf = {
 export function evaluateBoard(move, prevSum, color) {
 	if (game.in_checkmate()) {
 	  	if (move.color === color)
-			return 10 ** 10;
+			return 10000;
 		else
-			return -(10 ** 10);
+			return -10000;
 	}
   
 	if (game.in_draw() || game.in_threefold_repetition() || game.in_stalemate())

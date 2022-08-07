@@ -2,7 +2,7 @@ import { headers } from "./static/headers.js";
 
 const config = {
 	debug: true,
-	address: "127.0.0.1",
+	address: "0.0.0.0",
 	httpPort: 80,
 	headers,
 	allowedHosts: [
