@@ -8,6 +8,15 @@ window.onerror = (msg, src, lineno, colno, e) => {
 	alert(msg, "Error");
 };
 
+// register service worker if available
+if ("serviceWorker" in window.navigator && window.location.hostname != "localhost") {
+	window.navigator.serviceWorker.register("./sw.js", {
+		scope: "/",
+		type: "module",
+		updateViaCache: "all"
+	});
+}
+
 if (typeof SharedArrayBuffer == "undefined") {
 	window.location.reload();
 	return;
@@ -51,26 +60,16 @@ socket.on("invalid_id", () => {
 	localStorage.setItem("client_id", id);
 	socket.emit("client_id", id);
 });
+socket.on("users", (...args) => {
+	$("#players").text(args[0].length);
+});
 
 // update online players every second
 setInterval(() => {
 	if (socket.connected) {
 		socket.emit("req_users");
-		socket.on("users", (...args) => {
-			$("#players").text(args[0].length);
-		});
 	}
 }, 1000);
-
-
-// register service worker if available
-if ("serviceWorker" in window.navigator && window.location.hostname != "localhost") {
-	window.navigator.serviceWorker.register("./sw.js", {
-		scope: "/",
-		type: "module",
-		updateViaCache: "all"
-	});
-}
 
 
 // event listeners
