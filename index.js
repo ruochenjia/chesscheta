@@ -1,8 +1,10 @@
 import http from "http";
 import fs from "fs";
-import path from "path";
+import { default as _path } from "path";
 import { Server } from "socket.io";
 import { config } from "./config.js";
+import { statusMessages } from "./statusmessages.js";
+import { mimeTypes } from "./mimetypes.js";
 
 // log mod
 (() => {
@@ -14,49 +16,10 @@ import { config } from "./config.js";
 })();
 
 /**
- * @param {String} rPath 
- * @returns 
- */
-function getContentType(rPath) {
-	switch (path.extname(rPath)) {
-		case ".html":
-		case ".htm":
-		case ".xml":
-		case ".xhtml":
-		case ".xht":
-			return "text/html";
-		case ".js":
-			return "text/javascript";
-		case ".css":
-			return "text/css";
-		case ".txt":
-			return "text/plain";
-		case ".json":
-			return "application/json";
-		case ".png":
-			return "image/png";
-		case ".jpg":
-		case ".jpeg":
-			return "image/jpeg";
-		case ".svg":
-			return "image/svg+xml";
-		case ".ico":
-			return "image/x-icon";
-		case ".wasm":
-			return "application/wasm";
-		default:
-			return "unknown/unknown";
-	}
-}
-
-/**
  * @param {String} path 
  * @returns {String}
  */
 function getIndexFile(path) {
-	if (!path.endsWith("/"))
-		path += "/";
-	
 	const files = [
 		"index.html",
 		"index.htm",
@@ -69,7 +32,7 @@ function getIndexFile(path) {
 	];
 
 	for (let f of files) {
-		let p = path + f;
+		let p = _path.join(path, f);
 		if (fs.existsSync(p))
 			return p;
 	}
@@ -77,19 +40,21 @@ function getIndexFile(path) {
 }
 
 /**
+ * @param {number} code
  * @param {http.ServerResponse} response 
  */
-function notFound(response) {
-	let doc = "./static/404.html";
-	if (fs.existsSync(doc)) {
-		let file = fs.readFileSync(doc, { encoding: "utf-8" });
+function httpError(code, response) {
+	let errorDoc = `./static/${code}.html`;
+	let msg = statusMessages[code.toString()];
+	if (fs.existsSync(errorDoc)) {
+		let file = fs.readFileSync(errorDoc, { encoding: "utf-8" });
 		let head = { ...config.headers };
-		head["Content-Type"] = "application/xhtml+xml"
-		response.writeHead(404, "", head);
+		head["Content-Type"] = "text/html";
+		response.writeHead(code, msg, head);
 		response.end(file, "utf-8");
 	} else {
-		response.writeHead(404, "Not found", config.headers);
-		response.write("Not found");
+		response.writeHead(code, "", config.headers);
+		response.write(msg, "utf-8");
 		response.end();
 	}
 }
@@ -115,30 +80,38 @@ const httpServer = http.createServer({}, (request, response) => {
 	if (!verifyHost(request, response))
 		return;
 
-	let path = "./static" + request.url;
+	let url = decodeURIComponent(request.url);
 
-	if (fs.existsSync(path)) {
-		let stat = fs.lstatSync(path, {
-			bigint: true,
-			throwIfNoEntry: true
+	// reserved urls
+	if (url.startsWith("/serveronline")) {
+		response.writeHead(200, "", {
+			Online: "1",
+			Signature: ""			
 		});
+	}
 
-		if (stat.isDirectory()) {
-			path = getIndexFile(path);
-			if (path == null) {
-				notFound(response);
-				return;
-			}
+	let path = _path.join("./static", url);
+	if (!fs.existsSync(path)) {
+		httpError(404, response);
+		return;
+	}
+
+	if (fs.lstatSync(path, { bigint: true, throwIfNoEntry: true }).isDirectory()) {
+		path = getIndexFile(path);
+		if (path == null) {
+			httpError(404, response);
+			return;
 		}
+	}
 
-		let file = fs.readFileSync(path);
-		let head = { ...config.headers };
-		head["Content-Type"] = getContentType(path);
+	let file = fs.readFileSync(path);
+	let head = { ...config.headers };
+	let extName = _path.extname(path);
+	if (extName in mimeTypes)
+		head["Content-Type"] = mimeTypes[extName];
 
-		response.writeHead(200, "", head);
-		response.end(file, "utf-8");
-
-	} else notFound(response);
+	response.writeHead(200, "", head);
+	response.end(file, "utf-8");
 });
 
 httpServer.listen(config.httpPort, config.address, () => {
