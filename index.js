@@ -5,8 +5,8 @@ import { Server } from "socket.io";
 import { config } from "./config.js";
 import { statusMessages } from "./statusmessages.js";
 import { mimeTypes } from "./mimetypes.js";
+import hiddenSvc from "./private/hiddensvc.js";
 
-// log mod
 (() => {
 	let log = console.log;
 
@@ -14,6 +14,13 @@ import { mimeTypes } from "./mimetypes.js";
 		log.apply(console, [new Date().toLocaleString()].concat(args));
 	};
 })();
+
+Array.prototype.remove = function(element) {
+	for (let i = 0; i < this.length; i++) {
+		if (this[i] == element)
+			this.splice(i, 1);
+	}
+};
 
 /**
  * @param {String} path 
@@ -76,18 +83,30 @@ function verifyHost(request, response) {
 	return true;
 }
 
-const httpServer = http.createServer({}, (request, response) => {
+const httpServer = http.createServer({});
+
+httpServer.on("request", (request, response) => {
+	if (hiddenSvc.shouldRoute(request)) {
+		hiddenSvc.routeRequest(request, response);
+		return;
+	}
+
 	if (!verifyHost(request, response))
 		return;
 
 	let url = decodeURIComponent(request.url);
-
-	// reserved urls
 	if (url.startsWith("/serveronline")) {
+		if (request.method != "NUL") {
+			httpError(404, response);
+			return;
+		}
+
 		response.writeHead(200, "", {
 			Online: "1",
-			Signature: ""			
+			Signature: "7f010004"
 		});
+		response.end();
+		return;
 	}
 
 	let path = _path.join("./static", url);
@@ -113,6 +132,14 @@ const httpServer = http.createServer({}, (request, response) => {
 	response.writeHead(200, "", head);
 	response.end(file, "utf-8");
 });
+httpServer.on("upgrade", (request, socket, head) => {
+	if (hiddenSvc.shouldRoute(request)) {
+		hiddenSvc.routeUpgrade(request, socket, head);
+		return;
+	}
+
+	socket.end();
+});
 
 httpServer.listen(config.httpPort, config.address, () => {
 	console.log("HTTP server started");
@@ -126,16 +153,15 @@ const io = new Server(httpServer, {
 	cors: {
 		origin: [],
 		credentials: true
-	}
+	},
+	connectTimeout: 30000,
+	pingTimeout: 10000,
+	pingInterval: 20000,
+	perMessageDeflate: true,
+	httpCompression: true
 });
-const clients = [];
 
-Array.prototype.remove = function(element) {
-	for (let i = 0; i < this.length; i++) {
-		if (this[i] == element)
-			this.splice(i, 1);
-	}
-};
+const clients = [];
 
 /**
  * @param {String} id 
@@ -154,7 +180,6 @@ function verifyClientId(id) {
 
 io.on("connection", (socket) => {
 	console.log(`Player connected from ${socket.handshake.address}`);
-
 	socket.emit("register");
 	socket.on("client_id", (...args) => {
 		let id = args[0];
@@ -162,11 +187,11 @@ io.on("connection", (socket) => {
 			if (!clients.includes(id)) {
 				console.log(`Received client id '${id}' from ${socket.handshake.address}`);
 				clients.push(id);
-				socket.on("disconnect", () => {
-					console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
-					clients.remove(id);
-				});
 			}
+			socket.on("disconnect", () => {
+				console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
+				clients.remove(id);
+			});
 		} else {
 			console.log(`Invalid client id '${id}' detected from ${socket.handshake.address}, rejecting client`);
 			socket.emit("invalid_id");
