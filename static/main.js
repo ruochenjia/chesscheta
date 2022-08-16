@@ -166,11 +166,10 @@ function resizeBoard() {
 
 resizeBoard();
 
-
 function removeHighlights() {
-	$("#board").find(".square-55d63").removeClass("highlight-white");
-	$("#board").find(".square-55d63").removeClass("highlight-black");
-	$("#board").find(".square-55d63").removeClass("highlight-hint");
+	$("#board .square-55d63").removeClass("highlight-white");
+	$("#board .square-55d63").removeClass("highlight-black");
+	$("#board .square-55d63").removeClass("highlight-hint");
 }
 
 function newGame() {
@@ -182,6 +181,7 @@ function newGame() {
 	removeHighlights();
 	updateAdvantage();
 	$("#status").html("<b>White</b> to move.");
+	$("#pgn").html("");
 }
 
 function undo() {
@@ -278,12 +278,12 @@ async function getBestMove(color) {
 }
 
 async function showHint() {
-	$("#board").find(".square-55d63").removeClass('highlight-hint');
+	$("#board .square-55d63").removeClass('highlight-hint');
 
 	if ($("#show-hint").is(":checked")) {
 		let move = await getBestMove(config.color);
-		$("#board").find('.square-' + move.from).addClass('highlight-hint');
-		$("#board").find('.square-' + move.to).addClass('highlight-hint');
+		$("#board .square-" + move.from).addClass('highlight-hint');
+		$("#board .square-" + move.to).addClass('highlight-hint');
 	}
 }
 
@@ -303,13 +303,13 @@ async function makeBestMove(color) {
 
 function highlightMove(move) {
 	if (move.color == "b") {
-		$("#board").find(".square-55d63").removeClass("highlight-black");
-	  	$("#board").find(".square-" + move.from).addClass("highlight-black");
-		$("#board").find(".square-" + move.to).addClass("highlight-black");
+		$("#board .square-55d63").removeClass("highlight-black");
+	  	$("#board .square-" + move.from).addClass("highlight-black");
+		$("#board .square-" + move.to).addClass("highlight-black");
 	} else {
-		$("#board").find(".square-55d63").removeClass("highlight-white");
-	  	$("#board").find(".square-" + move.from).addClass("highlight-white");
-		$("#board").find(".square-" + move.to).addClass("highlight-white");
+		$("#board .square-55d63").removeClass("highlight-white");
+	  	$("#board .square-" + move.from).addClass("highlight-white");
+		$("#board .square-" + move.to).addClass("highlight-white");
 	}
 }
 
@@ -330,6 +330,7 @@ function onDrop(source, target) {
 	config.globalSum = evaluateBoard(move, config.globalSum, "b");
 	updateAdvantage();
 	highlightMove(move);
+	$("#pgn").text(game.pgn());
 
 	if (!checkStatus(move.color) && config.mode == "single") {
 		makeBestMove(game.turn()).then(() => {
@@ -387,5 +388,7 @@ function genCliId() {
 		str += Math.floor(Math.random() * 9);
 	return str;
 }
+
+$("#loading-screen").remove();
 
 })();
