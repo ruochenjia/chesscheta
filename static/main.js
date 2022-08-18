@@ -34,6 +34,8 @@ const board = Chessboard("board", {
 });
 const config = {};
 
+window.game = game;
+
 // engine init
 await engine.init("stockfish");
 engine.read();
@@ -143,6 +145,19 @@ $("#restart").on("click", () => {
 $("#menu-btn").on("click", () => {
 	changeScreen("#menu-screen");
 });
+$("#save").on("click", () => {
+	alert(`Game FEN String: <br/><br /><b>${game.fen()}</b><br /><br/>Please copy and save the text above.`, "Save");
+});
+$("#load").on("click", async () => {
+	let fen = await prompt("Please enter a valid FEN string.", "", "Load");
+	if (game.load(fen)) {
+		resetBoard();
+		if (config.mode == "single" && config.color != game.turn()) {
+			makeBestMove(game.turn());
+		}
+	}
+	else alert("Invalid FEN string", "Error");
+});
 $("#show-hint").on("change", () => {
 	showHint();
 });
@@ -174,13 +189,17 @@ function removeHighlights() {
 
 function newGame() {
 	game.reset();
+	resetBoard();
+}
+
+function resetBoard() {
 	engine.write("ucinewgame");
 	config.globalSum = 0;
 	config.undoStack = [];
-	board.position(game.fen());
+	board.position(game.fen(), false);
 	removeHighlights();
 	updateAdvantage();
-	$("#status").html("<b>White</b> to move.");
+	$("#status").html(`<b>${game.turn() == "w" ? "White": "Black"}</b> to move.`);
 	$("#pgn").html("");
 }
 
@@ -272,8 +291,7 @@ async function getBestMove(color) {
 
 	return {
 		from: move[0] + move[1],
-		to: move[2] + move[3],
-		promotion: "q"
+		to: move[2] + move[3]
 	};
 }
 
@@ -288,17 +306,14 @@ async function showHint() {
 }
 
 async function makeBestMove(color) {
-	let move = game.move(await getBestMove(color));
+	let bestMove = await getBestMove(color);
+	let move = makeMove(bestMove.from, bestMove.to, "q");
 	if (move == null) {
 		alert("An unexpected error occurred while moving for " + color, "Internel Error");
 		return;
 	}
 
 	board.position(game.fen());
-	config.globalSum = evaluateBoard(move, config.globalSum, "b");
-	updateAdvantage();
-	checkStatus(color);
-	highlightMove(move);
 }
 
 function highlightMove(move) {
@@ -313,31 +328,36 @@ function highlightMove(move) {
 	}
 }
 
-function onDrop(source, target) {
-	config.undoStack = [];
-	removeGreySquares();
+function makeMove(from, to, promotion) {
+	let move = game.move({ from, to, promotion });
 
-	let move = game.move({
-		from: source,
-		to: target,
-		promotion: "q"
-	});
-
-	// illegal move
 	if (move == null)
-		return "snapback";
-	
+		return null;
+
 	config.globalSum = evaluateBoard(move, config.globalSum, "b");
 	updateAdvantage();
 	highlightMove(move);
 	$("#pgn").text(game.pgn());
 
-	if (!checkStatus(move.color) && config.mode == "single") {
+	return {
+		...move,
+		status: checkStatus(move.color)
+	};
+}
+
+function onDrop(source, target) {
+	config.undoStack = [];
+	removeGreySquares();
+
+	let move = makeMove(source, target, game.turn(), "q");
+	if (move == null)
+		return "snapback";
+
+	if (!move.status && config.mode == "single") {
 		makeBestMove(game.turn()).then(() => {
 			showHint();
 		});
 	}
-	
 }
 
 function shouldMove(piece) {

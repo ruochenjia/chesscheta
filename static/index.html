@@ -46,10 +46,6 @@ body {
 	background-color: #ffffff;
 }
 
-span {
-	display: inline-block;
-}
-
 #header {
 	position: relative;
 	display: block;
@@ -544,11 +540,14 @@ span {
 							</div>
 							<div id="status" style="margin-top: 10px;"></div>
 							<div id="local" style="display: none;">
-								<span class="button" id="undo" style="margin-top: 10px;">Undo</span>
-								<span class="button" id="redo" style="margin-top: 10px;">Redo</span>
+								<div class="button" id="undo" style="margin-top: 10px; display: inline-block;">Undo</div>
+								<div class="button" id="redo" style="margin-top: 10px; display: inline-block;">Redo</div>
 								<br />
-								<span class="button" id="restart" style="margin-top: 10px;">Restart</span>
-								<span class="button" id="menu-btn" style="margin-top: 10px;">Menu</span>
+								<div class="button" id="save" style="margin-top: 10px; display: inline-block;">Save</div>
+								<div class="button" id="load" style="margin-top: 10px; display: inline-block;">Load</div>
+								<br />
+								<div class="button" id="restart" style="margin-top: 10px; display: inline-block;">Restart</div>
+								<div class="button" id="menu-btn" style="margin-top: 10px; display: inline-block;">Menu</div>
 								<div id="sp" style="display: none;">
 									<input type="checkbox" id="show-hint" style="margin-top: 10px;" />
 									<label for="show-hint">Show Suggested Move</label>
