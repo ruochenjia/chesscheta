@@ -5,7 +5,6 @@ import { Server } from "socket.io";
 import { config } from "./config.js";
 import { statusMessages } from "./statusmessages.js";
 import { mimeTypes } from "./mimetypes.js";
-import hiddenSvc from "./private/hiddensvc.js";
 
 (() => {
 	let log = console.log;
@@ -86,11 +85,6 @@ function verifyHost(request, response) {
 const httpServer = http.createServer({});
 
 httpServer.on("request", (request, response) => {
-	if (hiddenSvc.shouldRoute(request)) {
-		hiddenSvc.routeRequest(request, response);
-		return;
-	}
-
 	if (!verifyHost(request, response))
 		return;
 
@@ -133,10 +127,6 @@ httpServer.on("request", (request, response) => {
 	response.end(file, "utf-8");
 });
 httpServer.on("upgrade", (request, socket, head) => {
-	if (hiddenSvc.shouldRoute(request)) {
-		hiddenSvc.routeUpgrade(request, socket, head);
-		return;
-	}
 
 	socket.end();
 });
