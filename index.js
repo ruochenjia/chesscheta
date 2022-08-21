@@ -59,7 +59,7 @@ function httpError(code, response) {
 		response.writeHead(code, msg, head);
 		response.end(file, "utf-8");
 	} else {
-		response.writeHead(code, "", config.headers);
+		response.writeHead(code, msg, config.headers);
 		response.write(msg, "utf-8");
 		response.end();
 	}
@@ -71,14 +71,18 @@ function httpError(code, response) {
  */
 function verifyHost(request, response) {
 	let host = request.headers.host;
-	if (!config.allowedHosts.includes(host)) {
-		// prevent unauthorized hosts
-		response.writeHead(301, "Moved Permanently", { Location: `http://${config.allowedHosts[0]}${request.url}` });
-		response.write("Moved Permanently");
-		response.end();
+	if (host == null) {
+		// always reject requests without the host header
+		httpError(403, response);
 		return false;
 	}
 
+	let hostname = host.split(":")[0];
+	if (!config.allowedHosts.includes(hostname)) {
+		// prevent unauthorized hosts
+		httpError(403, response);
+		return false;
+	}
 	return true;
 }
 
@@ -141,7 +145,7 @@ httpServer.listen(config.httpPort, config.address, () => {
 
 const io = new Server(httpServer, {
 	cors: {
-		origin: [],
+		origin: "*",
 		credentials: true
 	},
 	connectTimeout: 30000,

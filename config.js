@@ -1,10 +1,10 @@
-import { headers } from "./static/headers.js";
+import { clientConfig } from "./static/clientconfig.js";
 
 const config = {
 	debug: true,
 	address: "0.0.0.0",
 	httpPort: 80,
-	headers,
+	headers: clientConfig.headers,
 	allowedHosts: [
 		"chesscheata.gq",
 		"www.chesscheata.gq",
