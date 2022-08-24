@@ -22,6 +22,20 @@ if (typeof SharedArrayBuffer == "undefined" && typeof stockfish == undefined) {
 	return;
 }
 
+Array.prototype.remove = function(element) {
+	for (let i = 0; i < this.length; i++) {
+		if (this[i] == element)
+			this.splice(i, 1);
+	}
+};
+
+Array.prototype.last = function() {
+	let len = this.length;
+	if (len < 1)
+		return null;
+	return this[len - 1];
+};
+
 const engine = await (async () => {
 	let base;
 	if (typeof stockfish == "undefined") {
@@ -129,6 +143,13 @@ socket.on("register", () => {
 		localStorage.setItem("client_id", clientId);
 	}
 	socket.emit("client_id", clientId);
+
+	// update online players every second
+	setInterval(() => {
+		if (socket.connected) {
+			socket.emit("req_users");
+		}
+	}, 1000);
 });
 socket.on("invalid_id", () => {
 	let id = genCliId();
@@ -138,13 +159,6 @@ socket.on("invalid_id", () => {
 socket.on("users", (...args) => {
 	$("#players").text(args[0].length);
 });
-
-// update online players every second
-setInterval(() => {
-	if (socket.connected) {
-		socket.emit("req_users");
-	}
-}, 1000);
 
 
 // event listeners
@@ -186,35 +200,29 @@ $("#play").on("click", () => {
 		board.orientation("white");
 	else {
 		board.orientation("black");
-		makeBestMove("w");
+		makeBestMove();
 	}		
 });
 $("#undo").on("click", () => {
-	let length = game.history().length;
-
-	if (config.mode != "single" && length >= 1) {
-		undo();
-	} else if (length >= 2) {
-		// undo twice (your move and your opponent's move)
-		undo();
-		undo();
+	if (undo()) {
+		removeHighlights();
+		updateAdvantage();
+		showHint();
+		$("#pgn").text(game.pgn());
 	} else alert("Nothing to undo");
 });
 $("#redo").on("click", () => {
-	let stack = config.undoStack;
-
-	if (config.mode != "single" && stack.length >=1 ) {
-		redo();
-	} else if (stack.length >= 2) {
-		// redo twice, same as undo
-		redo();
-		redo();
+	if (redo()) {
+		removeHighlights();
+		updateAdvantage();
+		showHint();
+		$("#pgn").text(game.pgn());
 	} else alert("Nothing to redo");
 });
 $("#restart").on("click", () => {
 	newGame();
 	if (config.mode == "single" && config.color != "w")
-		makeBestMove("w");
+		makeBestMove();
 });
 $("#menu-btn").on("click", () => {
 	changeScreen("#menu-screen");
@@ -224,11 +232,13 @@ $("#save").on("click", () => {
 });
 $("#load").on("click", async () => {
 	let fen = await prompt("Please enter a valid FEN string.", "", "Load");
+	if (fen == null)
+		return;
+
 	if (game.load(fen)) {
 		resetBoard();
-		if (config.mode == "single" && config.color != game.turn()) {
-			makeBestMove(game.turn());
-		}
+		if (config.mode == "single" && config.color != game.turn())
+			makeBestMove();
 	}
 	else alert("Invalid FEN string", "Error");
 });
@@ -268,7 +278,9 @@ function newGame() {
 
 function resetBoard() {
 	engine.write("ucinewgame");
+	config.prevSum = 0;
 	config.globalSum = 0;
+	config.moves = [];
 	config.undoStack = [];
 	board.position(game.fen(), false);
 	removeHighlights();
@@ -278,16 +290,52 @@ function resetBoard() {
 }
 
 function undo() {
-	let move = game.undo();
-	config.undoStack.push(move);
-	board.position(game.fen());
-	showHint();
+	let length = config.moves.length;
+	if (config.mode != "single" && length >= 1) {
+		_undo();
+		return true;
+	}
+
+	if (length >= 2) {
+		_undo();
+		_undo();
+		return true;
+	}
+
+	return false;
 }
 
 function redo() {
-	game.move(config.undoStack.pop());
+	let length = config.undoStack.length;
+	if (config.mode != "single" && length >= 1) {
+		_redo();
+		return true;
+	}
+
+	if (length >= 2) {
+		_redo();
+		_redo();
+		return true;
+	}
+
+	return false;
+}
+
+function _undo() {
+	game.undo();
+	let move = config.moves.pop();
+	let last = config.moves.last();
+	config.globalSum = last == null ? 0 : last.sum;
+	config.undoStack.push(move);
 	board.position(game.fen());
-	showHint();
+}
+
+function _redo() {
+	let move = config.undoStack.pop();
+	game.move(move);
+	config.moves.push(move);
+	config.globalSum = move.sum;
+	board.position(game.fen());
 }
 
 function updateAdvantage() {
@@ -315,13 +363,9 @@ function updateAdvantage() {
 	});
 }
 
-function capitalize(str) {
-	return str[0].toUpperCase() + str.slice(1);
-}
-
 function getStatusMessage(current, next) {
 	if (game.in_checkmate())
-		return `<b>Checkmate!</b> <b>${capitalize(current)}</b> won.`
+		return `<b>Checkmate!</b> <b>${current}</b> won.`
 	else if (game.insufficient_material())
 		return `<b>Draw!</b> (Insufficient Material)`;
 	else if (game.in_threefold_repetition())
@@ -331,14 +375,14 @@ function getStatusMessage(current, next) {
 	else if (game.in_draw())
 		return `<b>Draw!</b> (50-move Rule)`;
 	else if (game.in_check())
-		return `<b>${capitalize(next)}</b> to move, and is in <b>check!</b>`;
+		return `<b>${next}</b> to move, and is in <b>check!</b>`;
 	else
-		return `<b>${capitalize(next)}</b> to move.`;
+		return `<b>${next}</b> to move.`;
 }
 
 function checkStatus(color) {
-	let current = color == "w" ? "white" : "black";
-	let next = color == "w" ? "black" : "white";
+	let current = color == "w" ? "White" : "Black";
+	let next = color == "w" ? "Black" : "White";
 	let msg = getStatusMessage(current, next);
 
 	$("#status").html(msg);
@@ -349,11 +393,8 @@ function checkStatus(color) {
 	} else return false;
 }
 
-async function getBestMove(color) {
-	let fen = game.fen().split(" ");
-	fen[1] = color;
-	fen = fen.join(" ");
-	engine.write("position fen " + fen);
+async function getBestMove() {
+	engine.write(`position fen ${game.fen()}`);
 
 	let cmd = `go movetime ${config.searchTime}000`;
 	let depth = config.searchDepth;
@@ -361,7 +402,8 @@ async function getBestMove(color) {
 		cmd += " depth " + depth;
 
 	engine.write(cmd);
-	let move = (await engine.grep("bestmove")).split(" ")[1];
+	let output = await engine.grep("bestmove");
+	let move = output.split(" ")[1];
 
 	return {
 		from: move[0] + move[1],
@@ -373,17 +415,17 @@ async function showHint() {
 	$("#board .square-55d63").removeClass('highlight-hint');
 
 	if ($("#show-hint").is(":checked")) {
-		let move = await getBestMove(config.color);
+		let move = await getBestMove();
 		$("#board .square-" + move.from).addClass('highlight-hint');
 		$("#board .square-" + move.to).addClass('highlight-hint');
 	}
 }
 
-async function makeBestMove(color) {
-	let bestMove = await getBestMove(color);
+async function makeBestMove() {
+	let bestMove = await getBestMove();
 	let move = makeMove(bestMove.from, bestMove.to, "q");
 	if (move == null) {
-		alert("An unexpected error occurred while moving for " + color, "Internel Error");
+		alert("An unexpected error occurred while moving for " + game.turn(), "Internel Error");
 		return;
 	}
 
@@ -404,31 +446,30 @@ function highlightMove(move) {
 
 function makeMove(from, to, promotion) {
 	let move = game.move({ from, to, promotion });
-
 	if (move == null)
 		return null;
 
-	config.globalSum = evaluateBoard(move, config.globalSum, "b");
+	let sum = evaluateBoard(move, config.globalSum, "b");
+	move.sum = sum;
+	move.status = checkStatus(move.color);
+	config.moves.push(move);
+	config.globalSum = sum;
 	updateAdvantage();
 	highlightMove(move);
 	$("#pgn").text(game.pgn());
-
-	return {
-		...move,
-		status: checkStatus(move.color)
-	};
+	return move;
 }
 
 function onDrop(source, target) {
 	config.undoStack = [];
 	removeGreySquares();
 
-	let move = makeMove(source, target, game.turn(), "q");
+	let move = makeMove(source, target, "q");
 	if (move == null)
 		return "snapback";
 
 	if (!move.status && config.mode == "single") {
-		makeBestMove(game.turn()).then(() => {
+		makeBestMove().then(() => {
 			showHint();
 		});
 	}
