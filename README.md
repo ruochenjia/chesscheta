@@ -1,5 +1,5 @@
 # ChessCheata
-Online multiplayer / singleplayer chess game in HTML5 and nodeJS
+Online multiplayer / singleplayer chess game in HTML5 and nodeJS <br />
 Link to website: https://www.chesscheata.gq
 
 ## Features

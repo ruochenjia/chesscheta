@@ -1,6 +1,6 @@
 import { Chess } from "./lib/chess.js";
 
-export const game = new Chess();
+export const game = Chess();
 
 /*
  * Piece Square Tables, adapted from Sunfish.py:
@@ -114,7 +114,7 @@ export function evaluateBoard(move, prevSum, color) {
 			return -10000;
 	}
   
-	if (game.in_draw() || game.in_threefold_repetition() || game.in_stalemate())
+	if (game.in_draw())
 		return 0;
   
 	if (game.in_check()) {
@@ -124,14 +124,8 @@ export function evaluateBoard(move, prevSum, color) {
 			prevSum -= 50;
 	}
   
-	const from = [
-		8 - parseInt(move.from[1]),
-		move.from.charCodeAt(0) - "a".charCodeAt(0)
-	];
-	const to = [
-		8 - parseInt(move.to[1]),
-		move.to.charCodeAt(0) - "a".charCodeAt(0)
-	];
+	const from = [ 8 - parseInt(move.from[1]), move.from.charCodeAt(0) - "a".charCodeAt(0) ];
+	const to = [ 8 - parseInt(move.to[1]), move.to.charCodeAt(0) - "a".charCodeAt(0) ];
   
 	if (prevSum < -1500) {
 	  	if (move.piece === "k") {

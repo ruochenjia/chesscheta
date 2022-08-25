@@ -131,7 +131,6 @@ body {
 	width: 600px;
 	height: 600px;
 	vertical-align: top;
-	touch-action: none;
 }
 
 @media all and (max-width: 610px) {
@@ -161,6 +160,7 @@ body {
 	width: 100%;
 	height: 100%;
 	user-select: none;
+	touch-action: none;
 }
 
 .board-b72b1 {
@@ -409,10 +409,12 @@ body {
 
 .button:hover {
 	background-color: #303030;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 .button:active {
 	background-color: #505050;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 #option-menu {

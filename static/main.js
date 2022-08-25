@@ -17,7 +17,7 @@ if ("serviceWorker" in window.navigator && window.location.hostname != "localhos
 	});
 }
 
-if (typeof SharedArrayBuffer == "undefined" && typeof stockfish == undefined) {
+if (typeof SharedArrayBuffer == "undefined" && typeof stockfish == "undefined") {
 	window.location.reload();
 	return;
 }
@@ -181,7 +181,7 @@ $("#local-multiplayer").on("click", () => {
 $("#online-multiplayer").on("click", () => {
 	alert("Coming soon!");
 });
-$("#play").on("click", () => {
+$("#play").on("click", async () => {
 	let color = $("input[type=\"radio\"][name=\"color\"]:checked").val();
 	if (color == "r")
 		color = Math.random() > 0.5 ? "w" : "b";
@@ -200,8 +200,10 @@ $("#play").on("click", () => {
 		board.orientation("white");
 	else {
 		board.orientation("black");
-		makeBestMove();
-	}		
+		await makeBestMove();
+	}
+
+	showHint();
 });
 $("#undo").on("click", () => {
 	if (undo()) {
@@ -219,10 +221,13 @@ $("#redo").on("click", () => {
 		$("#pgn").text(game.pgn());
 	} else alert("Nothing to redo");
 });
-$("#restart").on("click", () => {
+$("#restart").on("click", async () => {
 	newGame();
-	if (config.mode == "single" && config.color != "w")
-		makeBestMove();
+	if (config.mode == "single") {
+		if (config.color != "w")
+			await makeBestMove();
+		showHint();
+	}
 });
 $("#menu-btn").on("click", () => {
 	changeScreen("#menu-screen");
@@ -237,10 +242,12 @@ $("#load").on("click", async () => {
 
 	if (game.load(fen)) {
 		resetBoard();
-		if (config.mode == "single" && config.color != game.turn())
-			makeBestMove();
-	}
-	else alert("Invalid FEN string", "Error");
+		if (config.mode == "single") {
+			if (config.color != game.turn())
+				await makeBestMove();
+			showHint();
+		}
+	} else alert("Invalid FEN string", "Error");
 });
 $("#show-hint").on("change", () => {
 	showHint();
@@ -282,6 +289,7 @@ function resetBoard() {
 	config.globalSum = 0;
 	config.moves = [];
 	config.undoStack = [];
+	config.ponderMove = null;
 	board.position(game.fen(), false);
 	removeHighlights();
 	updateAdvantage();
@@ -297,6 +305,7 @@ function undo() {
 	}
 
 	if (length >= 2) {
+		// undo twice in single player mode
 		_undo();
 		_undo();
 		return true;
@@ -313,6 +322,7 @@ function redo() {
 	}
 
 	if (length >= 2) {
+		// redo twice in single player mode
 		_redo();
 		_redo();
 		return true;
@@ -327,6 +337,8 @@ function _undo() {
 	let last = config.moves.last();
 	config.globalSum = last == null ? 0 : last.sum;
 	config.undoStack.push(move);
+	// recalculation is required after undo
+	config.ponderMove = null;
 	board.position(game.fen());
 }
 
@@ -363,31 +375,41 @@ function updateAdvantage() {
 	});
 }
 
-function getStatusMessage(current, next) {
-	if (game.in_checkmate())
-		return `<b>Checkmate!</b> <b>${current}</b> won.`
-	else if (game.insufficient_material())
-		return `<b>Draw!</b> (Insufficient Material)`;
-	else if (game.in_threefold_repetition())
-		return `<b>Draw!</b> (Threefold Repetition)`;
-	else if (game.in_stalemate())
-		return `<b>Draw!</b> (Stalemate)`;
-	else if (game.in_draw())
-		return `<b>Draw!</b> (50-move Rule)`;
-	else if (game.in_check())
-		return `<b>${next}</b> to move, and is in <b>check!</b>`;
-	else
-		return `<b>${next}</b> to move.`;
-}
-
 function checkStatus(color) {
-	let current = color == "w" ? "White" : "Black";
-	let next = color == "w" ? "Black" : "White";
-	let msg = getStatusMessage(current, next);
+	let current, next, msg, gameOver = false;
+
+	if (color == "w") {
+		current = "White";
+		next = "Black";
+	} else {
+		current = "Black";
+		next = "White";
+	}
+
+	// avoid using game.game_over() for performance reasons
+	if (game.in_checkmate()) {
+		msg = `<b>Checkmate!</b> <b>${current}</b> won.`
+		gameOver = true;
+	} else if (game.insufficient_material()) {
+		msg = `<b>Draw!</b> (Insufficient Material)`;
+		gameOver = true;
+	} else if (game.in_threefold_repetition()) {
+		msg = `<b>Draw!</b> (Threefold Repetition)`;
+		gameOver = true;
+	} else if (game.in_stalemate()) {
+		msg = `<b>Draw!</b> (Stalemate)`;
+		gameOver = true;
+	} else if (game.in_draw()) {
+		msg = `<b>Draw!</b> (50-move Rule)`;
+		gameOver = true;
+	} else if (game.in_check())
+		msg = `<b>${next}</b> to move, and is in <b>check!</b>`;
+	else
+		msg = `<b>${next}</b> to move.`;
 
 	$("#status").html(msg);
 
-	if (game.game_over()) {
+	if (gameOver) {
 		alert(msg, "Game Over");
 		return true;
 	} else return false;
@@ -402,33 +424,41 @@ async function getBestMove() {
 		cmd += " depth " + depth;
 
 	engine.write(cmd);
-	let output = await engine.grep("bestmove");
-	let move = output.split(" ")[1];
-
-	return {
+	let output = (await engine.grep("bestmove")).split(" ");
+	let move = output[1];
+	let moveObj = {
 		from: move[0] + move[1],
-		to: move[2] + move[3]
+		to: move[2] + move[3],
 	};
+
+	if (output.length == 4) {
+		let ponder = output[3];
+		let ponderObj = {
+			from: ponder[0] + ponder[1],
+			to: ponder[2] + ponder[3]
+		};
+		moveObj.ponder = ponderObj;
+	}
+
+	return moveObj;
 }
 
 async function showHint() {
 	$("#board .square-55d63").removeClass('highlight-hint');
 
-	if ($("#show-hint").is(":checked")) {
-		let move = await getBestMove();
+	if ($("#show-hint").is(":checked") && !game.game_over()) {
+		let move = config.ponderMove;
+		if (move == null)
+			move = await getBestMove();
 		$("#board .square-" + move.from).addClass('highlight-hint');
 		$("#board .square-" + move.to).addClass('highlight-hint');
 	}
 }
 
 async function makeBestMove() {
-	let bestMove = await getBestMove();
-	let move = makeMove(bestMove.from, bestMove.to, "q");
-	if (move == null) {
-		alert("An unexpected error occurred while moving for " + game.turn(), "Internel Error");
-		return;
-	}
-
+	let move = await getBestMove();
+	config.ponderMove = move.ponder;
+	makeMove(move.from, move.to, "q");
 	board.position(game.fen());
 }
 
