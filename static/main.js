@@ -1,6 +1,7 @@
 import { game, evaluateBoard } from "./gamebase.js";
 import { io } from "./lib/socket.io.esm.min.js";
 import { clientConfig } from "./clientconfig.js";
+import { UCIEngine } from "./uci.js";
 
 (async () => {
 // default error handler
@@ -36,79 +37,7 @@ Array.prototype.last = function() {
 	return this[len - 1];
 };
 
-const engine = await (async () => {
-	let base;
-	if (typeof stockfish == "undefined") {
-		// load required scripts
-		let script = document.createElement("script");
-		script.src = "lib/stockfish.js";
-		script.type = "text/javascript";
-		script.async = true;
-		document.getElementsByTagName("head")[0].appendChild(script);
-		await new Promise(resolve => {
-			script.onload = resolve;
-		});
-
-		let stockfish = await Stockfish();
-		let messages = [];
-
-		stockfish.addMessageListener(msg => {
-			// log output messages for debugging
-			if (clientConfig.debug)
-				console.log(msg);
-
-			messages.push(msg);
-		});
-
-		base = {
-			message: () => {
-				if (messages.length > 0) {
-					let msg = messages[0];
-					messages.splice(0, 1);
-					return msg;
-				}
-				return null;
-			},
-			postMessage: stockfish.postMessage
-		};
-	} else base = stockfish;
-
-	/**
-	 * @returns {string | null}
-	 */
-	function read() {
-		return base.message();
-	}
-
-	/**
-	 * @param {string} text 
-	 */
-	function write(text) {
-		base.postMessage(text);
-	}
-
-	/**
-	 * @param {String} text 
-	 * @returns {Promise<String>}
-	 */
-	function grep(text) {
-		return new Promise((resolve) => {
-			let timer = setInterval(() => {
-				let msg = this.read();
-				if (msg != null && msg.includes(text)) {
-					clearInterval(timer);
-					resolve(msg);
-				}
-			}, 50);
-		});
-	}
-
-	return {
-		read,
-		write,
-		grep
-	}
-})();
+const engine = UCIEngine();
 const board = Chessboard("board", {
 	draggable: true,
 	position: "start",
@@ -125,6 +54,7 @@ if (clientConfig.debug)
 	window.game = game;
 
 // engine init
+await engine.init("stockfish");
 engine.read();
 engine.write("uci");
 engine.write("setoption name Threads value 4");

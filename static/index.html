@@ -272,6 +272,13 @@ body {
 	overflow-x: hidden;
 }
 
+@media all and (max-width: 843px) {
+	#control-menu {
+		display: block;
+		margin: auto;
+	}
+}
+
 #local, #sp {
 	position: relative;
 	display: block;
@@ -279,11 +286,10 @@ body {
 	height: fit-content;
 }
 
-@media all and (max-width: 843px) {
-	#control-menu {
-		display: block;
-		margin: auto;
-	}
+#undo, #redo, #save, #load, #restart, #menu-btn {
+	display: inline-block;
+	margin-top: 10px;
+	width: calc(50% - 30px);
 }
 
 .block-title {
@@ -471,7 +477,7 @@ body {
 	line-height: 24px;
 	margin-left: auto;
 	margin-right: auto;
-	margin-top: 60px;
+	margin-top: 50px;
 	margin-bottom: 20px;
 	font-size: 16px;
 	font-weight: 600;
@@ -516,7 +522,7 @@ body {
 			</div>
 			<div id="option-screen" class="screen" style="visibility: hidden;">
 				<div id="option-menu">
-					<div class="block-title">Color</div>
+					<div class="block-title" style="margin-bottom: 10px;">Color</div>
 					<input type="radio" name="color" id="random" value="r" checked="true" />
 					<label for="random">Random</label>
 					<br />
@@ -525,7 +531,7 @@ body {
 					<br />
 					<input type="radio" name="color" id="black" value="b" />
 					<label for="black">Black</label>
-					<div class="block-title" style="margin-top: 40px;">AI Options</div>
+					<div class="block-title" style="margin-top: 40px; margin-bottom: 10px;">AI Options</div>
 					<label for="search-time">Search Time (s):</label>
 					<select id="search-time">
 						<option value="1">1</option>
@@ -565,14 +571,14 @@ body {
 							</div>
 							<div id="status" style="margin-top: 10px;"></div>
 							<div id="local" style="display: none;">
-								<div class="button" id="undo" style="margin-top: 10px; display: inline-block;">Undo</div>
-								<div class="button" id="redo" style="margin-top: 10px; display: inline-block;">Redo</div>
+								<div class="button" id="undo">Undo</div>
+								<div class="button" id="redo">Redo</div>
 								<br />
-								<div class="button" id="save" style="margin-top: 10px; display: inline-block;">Save</div>
-								<div class="button" id="load" style="margin-top: 10px; display: inline-block;">Load</div>
+								<div class="button" id="save">Save</div>
+								<div class="button" id="load">Load</div>
 								<br />
-								<div class="button" id="restart" style="margin-top: 10px; display: inline-block;">Restart</div>
-								<div class="button" id="menu-btn" style="margin-top: 10px; display: inline-block;">Menu</div>
+								<div class="button" id="restart">Restart</div>
+								<div class="button" id="menu-btn">Menu</div>
 								<div id="sp" style="display: none;">
 									<input type="checkbox" id="show-hint" style="margin-top: 10px;" />
 									<label for="show-hint">Show Suggested Move</label>
