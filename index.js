@@ -86,24 +86,51 @@ function verifyHost(request, response) {
 	return true;
 }
 
+function serverStatus() {
+	return {
+		Online: "1",
+		Version: "1.0",
+		Config: JSON.stringify(config),
+		Signature: "null"
+	};
+}
+
+/**
+ * @param {string} decodeUrl
+ * @param {http.IncomingMessage} request 
+ * @param {http.ServerResponse} response
+ */
+function handleServerRequest(decodeUrl, request, response) {
+	switch(decodeUrl) {
+		case "status":
+			response.writeHead(200, "", serverStatus());
+			response.end("_", "utf-8");
+			break;
+		case "test":
+			response.writeHead(200, "", {});
+			response.end("_", "utf-8");
+			break;
+		default:
+			httpError(404, response);
+			break;
+	}
+}
+
 const httpServer = http.createServer({});
 
 httpServer.on("request", (request, response) => {
 	if (!verifyHost(request, response))
 		return;
 
-	let url = decodeURIComponent(request.url);
-	if (url.startsWith("/serveronline")) {
-		if (request.method != "NUL") {
-			httpError(404, response);
-			return;
-		}
 
-		response.writeHead(200, "", {
-			Online: "1",
-			Signature: "7f010004"
-		});
-		response.end();
+	let url = request.url;
+	if (url == null) {
+		httpError(400, response);
+		return;
+	} else url = _path.normalize(decodeURIComponent(url));
+
+	if (url.startsWith("/server/") && request.method == "NUL") {
+		handleServerRequest(url.replace("/server/", ""), request, response);
 		return;
 	}
 
