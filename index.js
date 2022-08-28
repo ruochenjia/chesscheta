@@ -163,7 +163,8 @@ httpServer.on("upgrade", (request, socket, head) => {
 });
 
 httpServer.listen(config.httpPort, config.address, () => {
-	console.log("HTTP server started");
+	let addr = httpServer.address();
+	console.log(`HTTP server started on ${addr.address}:${addr.port}`);
 });
 
 

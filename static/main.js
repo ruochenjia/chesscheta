@@ -2,6 +2,7 @@ import { game, evaluateBoard } from "./gamebase.js";
 import { io } from "./lib/socket.io.esm.min.js";
 import { clientConfig } from "./clientconfig.js";
 import { UCIEngine } from "./uci.js";
+import { storage } from "./storage.js";
 
 (async () => {
 // default error handler
@@ -67,11 +68,10 @@ engine.grep("readyok");
 // server init
 const socket = io(clientConfig.server);
 socket.on("register", () => {
-	let clientId = localStorage.getItem("client_id");
-	if (clientId == null) {
-		clientId = genCliId();
-		localStorage.setItem("client_id", clientId);
-	}
+	let clientId = storage.clientId;
+	if (clientId == null)
+		clientId = storage.clientId = genCliId();
+
 	socket.emit("client_id", clientId);
 
 	// update online players every second
@@ -82,9 +82,9 @@ socket.on("register", () => {
 	}, 1000);
 });
 socket.on("invalid_id", () => {
-	let id = genCliId();
-	localStorage.setItem("client_id", id);
-	socket.emit("client_id", id);
+	let clientId = genCliId();
+	storage.clientId = clientId;
+	socket.emit("client_id", clientId);
 });
 socket.on("users", (...args) => {
 	$("#players").text(args[0].length);
@@ -99,6 +99,9 @@ $("#board").on("touchmove touchend touchstart", (e) => {
 });
 $("#single-player").on("click", () => {
 	changeScreen("#option-screen");
+	$(`input[type=\"radio\"][name=\"color\"][value=\"${storage.getItem("color", "r")}\"]`).prop("checked", true);
+	$("#search-time").val(storage.getItem("searchTime", "2"));
+	$("#search-depth").val(storage.getItem("searchDepth", "0"));
 });
 $("#local-multiplayer").on("click", () => {
 	config.mode = "local";
@@ -109,7 +112,21 @@ $("#local-multiplayer").on("click", () => {
 	board.orientation("white");
 });
 $("#online-multiplayer").on("click", () => {
-	alert("Coming soon!");
+	changeScreen("#online-option-screen");
+	$("#nickname").val(storage.getItem("nickname", "Player"));
+	$("#player-id").text(storage.clientId);
+});
+$("input[type=\"radio\"][name=\"color\"]").on("change", () => {
+	storage.color = $("input[type=\"radio\"][name=\"color\"]:checked").val();
+});
+$("#search-time").on("change", () => {
+	storage.searchTime = $("#search-time :selected").val();
+});
+$("#search-depth").on("change", () => {
+	storage.searchDepth = $("#search-depth :selected").val();
+});
+$("#nickname").on("change", () => {
+	storage.nickname = $("#nickname").val();
 });
 $("#play").on("click", async () => {
 	let color = $("input[type=\"radio\"][name=\"color\"]:checked").val();
@@ -123,6 +140,7 @@ $("#play").on("click", async () => {
 
 	$("#local").css("display", "block");
 	$("#sp").css("display", "block");
+	$("#show-hint").prop("checked", storage.getItem("showHint", false));
 	changeScreen("#game-screen");
 	newGame();
 
@@ -134,6 +152,9 @@ $("#play").on("click", async () => {
 	}
 
 	showHint();
+});
+$("#quick-match").on("click", () => {
+	alert("", "Server Connection Failure");
 });
 $("#undo").on("click", () => {
 	if (undo()) {
@@ -180,6 +201,7 @@ $("#load").on("click", async () => {
 	} else alert("Invalid FEN string", "Error");
 });
 $("#show-hint").on("change", () => {
+	storage.showHint = $("#show-hint").is(":checked");
 	showHint();
 });
 // chessboard resize handler

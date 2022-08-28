@@ -93,4 +93,46 @@ function UCIEngine() {
 	};
 }
 
+$("body").on("contextmenu", (e) => {
+	e.preventDefault();
+});
+
+$("body").on("keydown", (e) => {
+	function ac() {
+		let ctrl = e.ctrlKey || e.metaKey;
+		let shift = e.shiftKey;
+		let code = e.keyCode;
+
+		if (ctrl) {
+			if (shift) {
+				switch (code) {
+					case 73: // ctrl+shift+i
+					case 74: // ctrl+shift+j
+						return true;
+				}
+			}
+
+			switch (code) {
+				case 83: // ctrl+s
+				case 85: // ctrl+u
+				case 67: // ctrl+c
+					return true;
+			}
+		}
+
+		switch (code) {
+			case 123: // f12
+				return true;
+		}
+	}
+
+	if (ac()) {
+		e.preventDefault();
+		e.stopPropagation();
+		return false;
+	}
+
+	return true;
+});
+
 export { UCIEngine };
