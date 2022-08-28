@@ -10,26 +10,16 @@
 		<base href="/" />
 		<link rel="icon" type="image/x-icon" href="favicon.ico" />
 		<link rel="manifest" type="application/json" href="manifest.json" />
-		<script type="text/javascript" src="https://webalert.pages.dev/webalert.js" crossorigin="anonymous"></script>
-		<script type="text/javascript" src="lib/jquery-3.6.0.min.js"></script>
+		<script type="text/javascript" src="lib/jquery-3.6.1.min.js"></script>
 		<script type="text/javascript" src="lib/chessboard-1.0.0.min.js"></script>
+		<script type="text/javascript" src="lib/webalert/webalert.js"></script>
 		<title>ChessCheata</title>
 		<style type="text/css">
+@import url("res/ubuntu/ubuntu.css");
+
 * {
 	margin: 0px;
 	padding: 0px;
-}
-
-@font-face {
-	font-family: "Ubuntu";
-	font-style: normal;
-	src: url("res/ubuntu.ttf") format("truetype");
-}
-
-@font-face {
-	font-family: "Ubuntu Mono";
-	font-style: normal;
-	src: url("res/ubuntu-mono.ttf") format("truetype");
 }
 
 body {
@@ -39,7 +29,7 @@ body {
 	height: 100%;
 	overflow: hidden;
 	font-size: 14px;
-	font-family: "Ubuntu";
+	font-family: "Ubuntu Condensed";
 	font-weight: 500;
 	font-style: normal;
 	color: #303030;
@@ -558,6 +548,11 @@ body {
 						<option value="0" selected="true">Until timeout</option>
 					</select>
 					<div id="play" class="button">Play</div>
+				</div>
+			</div>
+			<div id="online-option-screen" class="screen" style="visibility: hidden;">
+				<div id="online-option-menu">
+
 				</div>
 			</div>
 			<div id="game-screen" class="screen" style="visibility: hidden;">
