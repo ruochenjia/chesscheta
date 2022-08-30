@@ -19,11 +19,6 @@ if ("serviceWorker" in window.navigator && window.location.hostname != "localhos
 	});
 }
 
-if (typeof SharedArrayBuffer == "undefined" && typeof stockfish == "undefined") {
-	window.location.reload();
-	return;
-}
-
 Array.prototype.remove = function(element) {
 	for (let i = 0; i < this.length; i++) {
 		if (this[i] == element)
@@ -182,6 +177,7 @@ $("#restart").on("click", async () => {
 });
 $("#menu-btn").on("click", () => {
 	changeScreen("#menu-screen");
+	config.movingPiece = false;
 });
 $("#save").on("click", () => {
 	alert(`Game FEN String: <br/><br /><b>${game.fen()}</b><br /><br/>Please copy and save the text above.`, "Save");
@@ -242,6 +238,7 @@ function resetBoard() {
 	config.moves = [];
 	config.undoStack = [];
 	config.ponderMove = null;
+	config.movingPiece = false;
 	board.position(game.fen(), false);
 	removeHighlights();
 	updateAdvantage();
@@ -251,36 +248,45 @@ function resetBoard() {
 
 function undo() {
 	let length = config.moves.length;
-	if (config.mode != "single" && length >= 1) {
-		_undo();
-		return true;
-	}
+	if (length < 1)
+		return false;
 
-	if (length >= 2) {
-		// undo twice in single player mode
-		_undo();
-		_undo();
-		return true;
+	switch (config.mode) {
+		case "single":
+			if (config.movingPiece) {
+				config.movingPiece = false;
+				_undo();
+			} else {
+				_undo();
+				_undo();
+			}
+			return true;
+		case "local":
+			_undo();
+			return true;
+		default:
+			return false;
 	}
-
-	return false;
 }
 
 function redo() {
 	let length = config.undoStack.length;
-	if (config.mode != "single" && length >= 1) {
-		_redo();
-		return true;
-	}
+	if (length < 1)
+		return false;
 
-	if (length >= 2) {
-		// redo twice in single player mode
-		_redo();
-		_redo();
-		return true;
+	switch (config.mode) {
+		case "single":
+			if (length >= 2) {
+				_redo();
+				_redo();
+				return true;
+			} else return false;
+		case "local":
+			_redo();
+			return true;
+		default:
+			return false;
 	}
-
-	return false;
 }
 
 function _undo() {
@@ -408,10 +414,15 @@ async function showHint() {
 }
 
 async function makeBestMove() {
+	config.movingPiece = true;
 	let move = await getBestMove();
+	if (!config.movingPiece)
+		return; // interrupt move
+
 	config.ponderMove = move.ponder;
 	makeMove(move.from, move.to, "q");
 	board.position(game.fen());
+	config.movingPiece = false;
 }
 
 function highlightMove(move) {

@@ -16,6 +16,10 @@ const engines = {
 				return window.stockfish;
 			
 			// wasm module
+			if (typeof SharedArrayBuffer == "undefined") {
+				window.location.reload();
+				return null;
+			}
 			let script = document.createElement("script");
 			script.src = "lib/stockfish.js";
 			script.type = "text/javascript";

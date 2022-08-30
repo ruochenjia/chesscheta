@@ -1,5 +1,5 @@
 
-function checkLocalStorage() {
+function testLocalStorage() {
 	try {
 		localStorage.setItem("test", "___test");
 		if (localStorage.getItem("test") !== "___test")
@@ -14,7 +14,7 @@ function checkLocalStorage() {
 let storage = (() => {
 	let base;
 
-	if (checkLocalStorage()) {
+	if (testLocalStorage()) {
 		let data = localStorage.getItem("data");
 		if (data == null)
 			data = "{}";
@@ -23,6 +23,11 @@ let storage = (() => {
 		base.save = function () {
 			localStorage.setItem("data", JSON.stringify(this));
 		};
+
+		// autosave
+		setInterval(() => {
+			base.save();
+		}, 10000);
 	} else {
 		alert("Local storage is disabled by your browser, your game data will not be saved.", "Warning");
 		base = {
@@ -38,11 +43,6 @@ let storage = (() => {
 			return this[key] = def;
 		return item;
 	};
-
-	setInterval(() => {
-		// autosave
-		base.save();
-	}, 10000);
 
 	return base;
 })();

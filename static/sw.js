@@ -11,6 +11,11 @@ async function fetchRe({ request }) {
 	let response = await caches.match(request);
 	if (response == null) {
 		response = await fetch(request);
+
+		// cross origin responses
+		if (response.status == 0)
+			return response;
+
 		try {
 			let cache = await caches.open(cacheName);
 			await cache.put(request, response.clone());
@@ -33,7 +38,7 @@ async function fetchRe({ request }) {
 
 self.addEventListener("install", (event) => {
 	event.waitUntil(install());
-})
+});
 
 self.addEventListener("fetch", (event) => {
 	event.respondWith(fetchRe(event));
