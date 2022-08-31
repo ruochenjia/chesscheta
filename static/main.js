@@ -81,9 +81,7 @@ socket.on("register", () => {
 
 	// update online players every second
 	setInterval(() => {
-		if (socket.connected) {
-			socket.emit("req_users");
-		}
+		socket.emit("req_users");
 	}, 1000);
 });
 socket.on("invalid_id", () => {

@@ -3,8 +3,6 @@ const clientConfig = {
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Methods": "GET",
 		"Access-Control-Allow-Credentials": "true",
-		"Allow-Chrome": "false",
-		"Content-Security-Policy": "frame-ancestors 'none'",
 		"Cross-Origin-Embedder-Policy": "require-corp",
 		"Cross-Origin-Opener-Policy": "same-origin",
 		"Referrer-Policy": "no-referrer",
