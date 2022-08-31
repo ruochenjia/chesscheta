@@ -1,0 +1,18 @@
+#!/bin/bash
+
+FILE_IN=$1
+FILE_OUT=$2
+
+if [ -z $FILE_IN ]; then
+	echo "$0: No input file specified"
+	exit 1
+fi
+
+if [ -z $FILE_OUT ]; then
+	FILE_OUT="$FILE_IN.out"
+fi
+
+ARGS="${@:3} --js $FILE_IN --js_output_file $FILE_OUT --compilation_level SIMPLE --env BROWSER \
+--language_in ECMASCRIPT_NEXT --language_out ECMASCRIPT5 --warning_level VERBOSE"
+
+google-closure-compiler $ARGS
