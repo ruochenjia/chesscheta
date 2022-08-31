@@ -33,6 +33,16 @@ Array.prototype.last = function() {
 	return this[len - 1];
 };
 
+Object.clear = (obj) => {
+	for (let k in obj)
+		delete obj[k];
+};
+
+Object.merge = (a, b) => {
+	for (let k in b)
+		a[k] = b[k];
+};
+
 const engine = UCIEngine();
 const board = Chessboard("board", {
 	draggable: true,
@@ -92,6 +102,54 @@ $("#board").on("touchmove touchend touchstart", (e) => {
 	if (e.cancelable)
 		e.preventDefault();
 });
+$("#continue").on("click", async () => {
+	let cfg = storage.savedGame;
+	if (cfg == null) {
+		alert("Internal error", "Error");
+		$("#continue").css("display", "none");
+	}
+
+	Object.clear(config);
+	Object.merge(config, cfg);
+
+	switch (cfg.mode) {
+		case "single":
+			$("#local").css("display", "block");
+			$("#single").css("display", "block");
+			$("#show-hint").prop("checked", storage.getItem("showHint", false));
+
+			if (cfg.color == "w")
+				board.orientation("white");
+			else
+				board.orientation("black");
+			showHint();
+			break;
+		case "local":
+			$("#local").css("display", "block");
+			$("#sp").css("display", "none");
+			board.orientation("white");
+	}
+
+	game.reset();
+	engine.write("ucinewgame");
+	for (let m of cfg.moves) {
+		game.move(m);
+	}
+
+	board.position(game.fen(), false);
+	removeHighlights();
+	updateAdvantage();
+	$("#status").html(`<b>${game.turn() == "w" ? "White": "Black"}</b> to move.`);
+	$("#pgn").html(game.pgn());
+	$("#fen").val(game.fen());
+	changeScreen("#game-screen");
+
+	if (cfg.mode == "single") {
+		if (cfg.color != game.turn())
+			await makeBestMove();
+		showHint();
+	}
+});
 $("#single-player").on("click", () => {
 	changeScreen("#option-screen");
 	$(`input[type=\"radio\"][name=\"color\"][value=\"${storage.getItem("color", "r")}\"]`).prop("checked", true);
@@ -150,6 +208,7 @@ $("#play").on("click", async () => {
 });
 $("#quick-match").on("click", () => {
 	alert("", "Server Connection Failure");
+	changeScreen("#menu-screen");
 });
 $("#undo").on("click", () => {
 	if (undo()) {
@@ -157,6 +216,7 @@ $("#undo").on("click", () => {
 		updateAdvantage();
 		showHint();
 		$("#pgn").text(game.pgn());
+		$("#fen").val(game.fen());
 	} else alert("Nothing to undo");
 });
 $("#redo").on("click", () => {
@@ -165,6 +225,7 @@ $("#redo").on("click", () => {
 		updateAdvantage();
 		showHint();
 		$("#pgn").text(game.pgn());
+		$("#fen").val(game.fen());
 	} else alert("Nothing to redo");
 });
 $("#restart").on("click", async () => {
@@ -178,14 +239,12 @@ $("#restart").on("click", async () => {
 $("#menu-btn").on("click", () => {
 	changeScreen("#menu-screen");
 	config.movingPiece = false;
-});
-$("#save").on("click", () => {
-	alert(`Game FEN String: <br/><br /><b>${game.fen()}</b><br /><br/>Please copy and save the text above.`, "Save");
+	if (storage.savedGame != null)
+		$("#continue").css("display", "block");
+	else $("#continue").css("display", "none");
 });
 $("#load").on("click", async () => {
-	let fen = await prompt("Please enter a valid FEN string.", "", "Load");
-	if (fen == null)
-		return;
+	let fen = $("#fen").val();
 
 	if (game.load(fen)) {
 		resetBoard();
@@ -219,6 +278,8 @@ function resizeBoard() {
 }
 
 resizeBoard();
+if (storage.savedGame != null)
+	$("#continue").css("display", "block");
 
 function removeHighlights() {
 	$("#board .square-55d63").removeClass("highlight-white");
@@ -233,17 +294,21 @@ function newGame() {
 
 function resetBoard() {
 	engine.write("ucinewgame");
-	config.prevSum = 0;
 	config.globalSum = 0;
 	config.moves = [];
 	config.undoStack = [];
 	config.ponderMove = null;
 	config.movingPiece = false;
-	board.position(game.fen(), false);
+	storage.savedGame = null;
+
+	let fen = game.fen();
+	let pgn = game.pgn();
+	board.position(fen, false);
 	removeHighlights();
 	updateAdvantage();
 	$("#status").html(`<b>${game.turn() == "w" ? "White": "Black"}</b> to move.`);
-	$("#pgn").html("");
+	$("#pgn").text(pgn);
+	$("#fen").val(fen);
 }
 
 function undo() {
@@ -450,6 +515,8 @@ function makeMove(from, to, promotion) {
 	updateAdvantage();
 	highlightMove(move);
 	$("#pgn").text(game.pgn());
+	$("#fen").val(game.fen());
+	storage.savedGame = { ...config }
 	return move;
 }
 

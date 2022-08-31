@@ -36,6 +36,14 @@ body {
 	background-color: #ffffff;
 }
 
+input, select, textarea {
+	font-size: inherit;
+	font-family: inherit;
+	font-weight: inherit;
+	font-style: inherit;
+	color: inherit;
+}
+
 #header {
 	position: relative;
 	display: block;
@@ -276,7 +284,7 @@ body {
 	height: fit-content;
 }
 
-#undo, #redo, #save, #load, #restart, #menu-btn {
+#undo, #redo, #restart, #menu-btn {
 	display: inline-block;
 	margin-top: 10px;
 	width: calc(50% - 30px);
@@ -320,7 +328,7 @@ body {
 	height: 30px;
 }
 
-#moves {
+#moves, #fen-label {
 	position: relative;
 	display: block;
 	width: 100%;
@@ -331,7 +339,7 @@ body {
 	font-weight: 600;
 }
 
-#pgn {
+#fen, #pgn {
 	position: relative;
 	display: block;
 	width: 100%;
@@ -353,17 +361,6 @@ body {
 	margin-left: -150px;
 }
 
-#menu-title {
-	position: relative;
-	display: block;
-	width: 100%;
-	height: 40px;
-	line-height: 40px;
-	font-size: 24px;
-	font-weight: 600;
-	text-align: center;
-}
-
 .button {
 	position: relative;
 	width: fit-content;
@@ -377,7 +374,7 @@ body {
 	text-align: center;
 }
 
-.menu {
+#menu .button {
 	width: 100%;
 	height: 24px;
 	line-height: 24px;
@@ -423,13 +420,14 @@ body {
 	margin-top: 100px;
 }
 
-.option-menu input[type="radio"] {
+input[type="radio"], input[type="checkbox"] {
 	position: relative;
 	width: fit-content;
 	height: fit-content;
+	accent-color: #008000;
 }
 
-.option-menu label {
+label {
 	position: relative;
 	width: fit-content;
 	height: 20px;
@@ -438,7 +436,7 @@ body {
 	vertical-align: middle;
 }
 
-.option-menu select, .option-menu input[type="text"] {
+select, input[type="text"] {
 	position: relative;
 	width: fit-content;
 	height: fit-content;
@@ -446,10 +444,6 @@ body {
 	margin-bottom: 5px;
 	padding: 5px;
 	outline: none;
-	color: inherit;
-	font-size: inherit;
-	font-weight: inherit;
-	font-family: inherit;
 	border-width: 1px;
 	border-style: solid;
 	border-color: #808080;
@@ -457,7 +451,7 @@ body {
 	background-color: rgba(0, 0, 0, 0);
 }
 
-.option-menu select:focus, .option-menu input[type="text"]:focus {
+select:focus, input[type="text"]:focus {
 	border-color: #303030;
 }
 
@@ -496,10 +490,10 @@ body {
 		<div id="screen-container">
 			<div id="menu-screen" class="screen">
 				<div id="menu">
-					<div id="menu-title">Game Mode</div>
-					<div id="single-player" class="menu button">Single Player</div>
-					<div id="local-multiplayer" class="menu button">Local Multiplayer</div>
-					<div id="online-multiplayer" class="menu button">Online Multiplayer</div>
+					<div id="continue" class="button" style="display: none;">Continue</div>
+					<div id="single-player" class="button">Single Player</div>
+					<div id="local-multiplayer" class="button">Local Multiplayer</div>
+					<div id="online-multiplayer" class="button">Online Multiplayer</div>
 				</div>
 				<div id="footer">©2022 ChessCheata, created by <a href="https://www.github.com/ruochenjia">Ruochen Jia</a></div>
 			</div>
@@ -568,9 +562,6 @@ body {
 								<div class="button" id="undo">Undo</div>
 								<div class="button" id="redo">Redo</div>
 								<br />
-								<div class="button" id="save">Save</div>
-								<div class="button" id="load">Load</div>
-								<br />
 								<div class="button" id="restart">Restart</div>
 								<div class="button" id="menu-btn">Menu</div>
 								<div id="sp" style="display: none;">
@@ -578,6 +569,9 @@ body {
 									<label for="show-hint">Show Suggested Move</label>
 								</div>
 							</div>
+							<div id="fen-label">FEN: </div>
+							<input id="fen" type="text" value="" placeholder="FEN String" />
+	 						<div id="load" class="button">Load</div>
 							<div id="moves">Moves: </div>
 							<div id="pgn"></div>
 						</div>
