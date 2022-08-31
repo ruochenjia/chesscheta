@@ -9,7 +9,9 @@ const config = {
 		"chesscheata.gq",
 		"www.chesscheata.gq",
 		"localhost"
-	]
+	],
+	requestLogFile: "./request.log",
+	logRequests: true
 };
 
 export { config };

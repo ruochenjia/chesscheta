@@ -1,18 +1,11 @@
 import http from "http";
 import fs from "fs";
+import log from "./log.js";
 import { default as _path } from "path";
 import { Server } from "socket.io";
 import { config } from "./config.js";
 import { statusMessages } from "./statusmessages.js";
 import { mimeTypes } from "./mimetypes.js";
-
-(() => {
-	let log = console.log;
-
-	console.log = (...args) => {
-		log.apply(console, [new Date().toLocaleString()].concat(args));
-	};
-})();
 
 Array.prototype.remove = function(element) {
 	for (let i = 0; i < this.length; i++) {
@@ -20,6 +13,13 @@ Array.prototype.remove = function(element) {
 			this.splice(i, 1);
 	}
 };
+
+const requestLogStream = fs.createWriteStream(config.requestLogFile, {
+	encoding: "utf-8",
+	mode: 0o644,
+	flags: "a",
+	autoClose: false
+});
 
 /**
  * @param {String} path 
@@ -86,53 +86,32 @@ function verifyHost(request, response) {
 	return true;
 }
 
-function serverStatus() {
-	return {
-		Online: "1",
-		Version: "1.0",
-		Config: JSON.stringify(config),
-		Signature: "null"
-	};
-}
-
 /**
- * @param {string} decodeUrl
  * @param {http.IncomingMessage} request 
- * @param {http.ServerResponse} response
  */
-function handleServerRequest(decodeUrl, request, response) {
-	switch(decodeUrl) {
-		case "status":
-			response.writeHead(200, "", serverStatus());
-			response.end("_", "utf-8");
-			break;
-		case "test":
-			response.writeHead(200, "", {});
-			response.end("_", "utf-8");
-			break;
-		default:
-			httpError(404, response);
-			break;
-	}
+function logRequest(request) {
+	requestLogStream.write(log.formatLog(JSON.stringify({
+		method: request.method,
+		url: request.url,
+		host: request.headers.host,
+		userAgent: request.headers["user-agent"]
+	})) + "\n");
 }
 
 const httpServer = http.createServer({});
-
 httpServer.on("request", (request, response) => {
 	if (!verifyHost(request, response))
 		return;
-
 
 	let url = request.url;
 	if (url == null) {
 		httpError(400, response);
 		return;
-	} else url = _path.normalize(decodeURIComponent(url));
-
-	if (url.startsWith("/server/") && request.method == "NUL") {
-		handleServerRequest(url.replace("/server/", ""), request, response);
-		return;
 	}
+	url = _path.normalize(decodeURIComponent(url));
+
+	if (config.logRequests)
+		logRequest(request);
 
 	let path = _path.join("./static", url);
 	if (!fs.existsSync(path)) {
@@ -192,7 +171,7 @@ function verifyClientId(id) {
 	if (id.length != 20)
 		return false;
 
-	for (let i = 0; i < id.length; i++) {
+	for (let i = 0; i < 20; i++) {
 		let code = id.charCodeAt(i);
 		if (code > 0x39 || code < 0x30)
 			return false;
@@ -205,21 +184,24 @@ io.on("connection", (socket) => {
 	socket.emit("register");
 	socket.on("client_id", (...args) => {
 		let id = args[0];
-		if (verifyClientId(id)) {
-			if (!clients.includes(id)) {
-				console.log(`Received client id '${id}' from ${socket.handshake.address}`);
-				clients.push(id);
-			}
-			socket.on("disconnect", () => {
-				console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
-				clients.remove(id);
-			});
-		} else {
+		if (!verifyClientId(id)) {
 			console.log(`Invalid client id '${id}' detected from ${socket.handshake.address}, rejecting client`);
 			socket.emit("invalid_id");
+			return;
 		}
-	});
-	socket.on("req_users", () => {
-		socket.emit("users", clients);
+
+		if (!clients.includes(id)) {
+			console.log(`Received client id '${id}' from ${socket.handshake.address}`);
+			clients.push(id);
+		}
+
+		socket.on("disconnect", () => {
+			console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
+			clients.remove(id);
+		});
+
+		socket.on("req_users", () => {
+			socket.emit("users", clients);
+		});
 	});
 });
