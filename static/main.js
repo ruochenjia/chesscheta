@@ -65,7 +65,6 @@ engine.read();
 engine.write("uci");
 engine.write("setoption name Threads value 4");
 engine.write("setoption name Hash value 128");
-engine.write("setoption name UCI_Elo value 2500");
 await engine.grep("uciok");
 engine.write("isready");
 engine.grep("readyok");
@@ -115,6 +114,7 @@ $("#continue").on("click", async () => {
 			$("#local").css("display", "block");
 			$("#single").css("display", "block");
 			$("#show-hint").prop("checked", storage.getItem("showHint", false));
+			engine.write("setoption name Skill Level value " + storage.skillLevel);
 
 			if (cfg.color == "w")
 				board.orientation("white");
@@ -151,6 +151,7 @@ $("#continue").on("click", async () => {
 $("#single-player").on("click", () => {
 	changeScreen("#option-screen");
 	$(`input[type=\"radio\"][name=\"color\"][value=\"${storage.getItem("color", "r")}\"]`).prop("checked", true);
+	$("#skill-level").val(storage.getItem("skillLevel", "20"));
 	$("#search-time").val(storage.getItem("searchTime", "2"));
 	$("#search-depth").val(storage.getItem("searchDepth", "0"));
 });
@@ -169,6 +170,9 @@ $("#online-multiplayer").on("click", () => {
 });
 $("input[type=\"radio\"][name=\"color\"]").on("change", () => {
 	storage.color = $("input[type=\"radio\"][name=\"color\"]:checked").val();
+});
+$("#skill-level").on("change", () => {
+	storage.skillLevel = $("#skill-level :selected").val();
 });
 $("#search-time").on("change", () => {
 	storage.searchTime = $("#search-time :selected").val();
@@ -192,6 +196,7 @@ $("#play").on("click", async () => {
 	$("#local").css("display", "block");
 	$("#sp").css("display", "block");
 	$("#show-hint").prop("checked", storage.getItem("showHint", false));
+	engine.write("setoption name Skill Level value " + $("#skill-level :selected").val());
 	changeScreen("#game-screen");
 	newGame();
 
