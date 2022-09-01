@@ -11,6 +11,8 @@ const config = {
 		"localhost"
 	],
 	requestLogFile: "./request.log",
+	playerInfoFile: "./players.json",
+	gameInfoFile: "./games.json",
 	logRequests: true
 };
 

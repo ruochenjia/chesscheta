@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 import { config } from "./config.js";
 import { statusMessages } from "./statusmessages.js";
 import { mimeTypes } from "./mimetypes.js";
+import { Players } from "./players.js";
+import { Games } from "./games.js";
 
 Array.prototype.remove = function(element) {
 	for (let i = 0; i < this.length; i++) {
@@ -162,7 +164,8 @@ const io = new Server(httpServer, {
 	httpCompression: true
 });
 
-const clients = [];
+const players = new Players(config.playerInfoFile);
+const games = new Games(config.gameInfoFile);
 
 /**
  * @param {String} id 
@@ -180,28 +183,57 @@ function verifyClientId(id) {
 }
 
 io.on("connection", (socket) => {
-	console.log(`Player connected from ${socket.handshake.address}`);
 	socket.emit("register");
 	socket.on("client_id", (...args) => {
 		let id = args[0];
 		if (!verifyClientId(id)) {
-			console.log(`Invalid client id '${id}' detected from ${socket.handshake.address}, rejecting client`);
 			socket.emit("invalid_id");
 			return;
 		}
 
-		if (!clients.includes(id)) {
-			console.log(`Received client id '${id}' from ${socket.handshake.address}`);
-			clients.push(id);
-		}
+		players.add(id);
 
 		socket.on("disconnect", () => {
-			console.log(`Player '${id}' disconnected from ${socket.handshake.address}`);
-			clients.remove(id);
+			players.remove(id);
+			let game = games.disconnect(id);
+			if (game != null) {
+				let op = id == game.playerW ? game.playerB: game.playerW;
+				let p = players.getItem(op);
+				if (p != null && p.__socket != null) {
+					p.__socket().emit("game_abort");
+				}
+			}
 		});
 
 		socket.on("req_users", () => {
-			socket.emit("users", clients);
+			socket.emit("users", players.onlinePlayers());
+		});
+
+		socket.on("req_quick_match", (...args) => {
+			players.setInfo(id, args[0]);
+			players.startMatching(id);
+
+			socket.on("cancel_quick_match", () => {
+				players.stopMatching(id);
+			});
+
+			players.quickMatch(id, socket, (result) => {
+				if (result.errorMsg != null) {
+					socket.emit("error_quick_match", result.errorMsg);
+					return;
+				}
+
+				socket.emit("match", result);
+
+				let game = games.getGame(id, result.opponent.id, result.color);
+				let opSocket = result.opponent.__socket();
+
+				socket.on("make_move", (...args) => {
+					game.makeMove(args[0]);
+					socket.emit("sync_move", game.fen);
+					opSocket.emit("sync_move", game.fen);
+				});
+			});
 		});
 	});
 });
