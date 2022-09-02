@@ -8,6 +8,7 @@ const config = {
 	allowedHosts: [
 		"chesscheata.gq",
 		"www.chesscheata.gq",
+		"a54.chesscheata.gq",
 		"localhost"
 	],
 	requestLogFile: "./request.log",

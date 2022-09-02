@@ -205,10 +205,6 @@ io.on("connection", (socket) => {
 			}
 		});
 
-		socket.on("req_users", () => {
-			socket.emit("users", players.onlinePlayers());
-		});
-
 		socket.on("req_quick_match", (...args) => {
 			players.setInfo(id, args[0]);
 			players.startMatching(id);
