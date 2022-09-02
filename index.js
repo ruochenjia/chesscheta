@@ -7,7 +7,7 @@ import { config } from "./config.js";
 import { statusMessages } from "./statusmessages.js";
 import { mimeTypes } from "./mimetypes.js";
 import { Players } from "./players.js";
-import { Games } from "./games.js";
+import { Game, Games } from "./games.js";
 
 Array.prototype.remove = function(element) {
 	for (let i = 0; i < this.length; i++) {
@@ -182,6 +182,20 @@ function verifyClientId(id) {
 	return true;
 }
 
+/**
+ * @param {String} id 
+ */
+function disconnectPlayer(id) {
+	let game = games.disconnect(id);
+	if (game != null) {
+		let op = id == game.playerW ? game.playerB: game.playerW;
+		let p = players.getItem(op);
+		if (p != null && p.__socket != null) {
+			p.__socket().emit("game_abort");
+		}
+	}
+}
+
 io.on("connection", (socket) => {
 	socket.emit("register");
 	socket.on("client_id", (...args) => {
@@ -195,14 +209,11 @@ io.on("connection", (socket) => {
 
 		socket.on("disconnect", () => {
 			players.remove(id);
-			let game = games.disconnect(id);
-			if (game != null) {
-				let op = id == game.playerW ? game.playerB: game.playerW;
-				let p = players.getItem(op);
-				if (p != null && p.__socket != null) {
-					p.__socket().emit("game_abort");
-				}
-			}
+			disconnectPlayer(id);
+		});
+
+		socket.on("req_disconnect", () => {
+			disconnectPlayer(id);
 		});
 
 		socket.on("req_quick_match", (...args) => {
@@ -225,9 +236,16 @@ io.on("connection", (socket) => {
 				let opSocket = result.opponent.__socket();
 
 				socket.on("make_move", (...args) => {
-					game.makeMove(args[0]);
-					socket.emit("sync_move", game.fen);
-					opSocket.emit("sync_move", game.fen);
+					let move = args[0];
+					let result = game.makeMove(move);
+					if (result == Game.MOVE_ILLEGAL) {
+						socket.emit("sync_move", {
+							fen: game.fen,
+							pgn: game.pgn
+						});
+					} else {
+						opSocket.emit("move", move);
+					}
 				});
 			});
 		});

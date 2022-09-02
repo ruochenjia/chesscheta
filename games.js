@@ -154,7 +154,7 @@ export function Games(file) {
 	 */
 	this.disconnect = (playerId) => {
 		let game = this.getByPlayerId(playerId);
-		if (game != null) {
+		if (game != null && game.result == Game.RESULT_NULL) {
 			game.result = Game.RESULT_ABORTED;
 			return game;
 		}
