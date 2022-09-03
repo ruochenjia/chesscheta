@@ -2,8 +2,8 @@
 	"name": "chesscheata-server",
 	"version": "0.1.0",
 	"description": "",
-	"author": "",
-	"license": "ISC",
+	"author": "Ruochen Jia",
+	"license": "GPL-3.0",
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
