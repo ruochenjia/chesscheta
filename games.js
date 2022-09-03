@@ -54,11 +54,7 @@ Game.MOVE_FINAL = -1;
 Game.MOVE_NORMAL = 1;
 Game.MOVE_ILLEGAL = 0;
 
-
-/**
- * @param {String} file 
- */
-export function Games(file) {
+export function Games() {
 	/**
 	 * @type { Game[] }
 	 */
@@ -87,27 +83,6 @@ export function Games(file) {
 
 	this.getItem = getItem;
 	this.removeItem = removeItem;
-
-	this.save = () => {
-		// save game history
-		let original = [];
-		if (fs.existsSync(file)) {
-			original = JSON.parse(fs.readFileSync(file, { encoding: "utf-8" }));
-		}
-		let current = [ ...games ];
-
-		for (let o of original) {
-			let it = this.getItem(o.id);
-			if (it == null) {
-				current.push(o);
-			}
-		}
-
-		fs.writeFileSync(file, JSON.stringify(current, null, "\t"), { encoding: "utf-8", mode: 0o644 });
-	};
-
-	// autosave
-	setInterval(this.save, 10000);
 
 	/**
 	 * @param {String} playerW 

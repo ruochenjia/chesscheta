@@ -10,20 +10,11 @@ function Player(id, online = false) {
 	this.matching = false;
 }
 
-/**
- * @param {String} file 
- */
-export function Players(file) {
+export function Players() {
 	/**
 	 * @type { Player[] }
 	 */
-	let players = (() => {
-		if (fs.existsSync(file)) {
-			return JSON.parse(fs.readFileSync(file, { encoding: "utf-8" }));
-		}
-
-		return [];
-	})();
+	let players = [];
 
 	// fix dead lock
 	for (let p of players) {
@@ -85,13 +76,6 @@ export function Players(file) {
 		if (it != null)
 			it.info = info;
 	};
-
-	this.save = () => {
-		fs.writeFileSync(file, JSON.stringify(players, null, "\t"), { encoding: "utf-8", mode: 0o644 });
-	};
-
-	// autosave
-	setInterval(this.save, 10000);
 
 	this.onlinePlayers = () => {
 		let pl = [];

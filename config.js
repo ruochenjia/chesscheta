@@ -10,11 +10,7 @@ const config = {
 		"www.chesscheata.gq",
 		"a54.chesscheata.gq",
 		"localhost"
-	],
-	requestLogFile: "./request.log",
-	playerInfoFile: "./players.json",
-	gameInfoFile: "./games.json",
-	logRequests: true
+	]
 };
 
 export { config };

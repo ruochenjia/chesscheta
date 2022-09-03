@@ -16,13 +16,6 @@ Array.prototype.remove = function(element) {
 	}
 };
 
-const requestLogStream = fs.createWriteStream(config.requestLogFile, {
-	encoding: "utf-8",
-	mode: 0o644,
-	flags: "a",
-	autoClose: false
-});
-
 /**
  * @param {String} path 
  * @returns {String}
@@ -88,18 +81,6 @@ function verifyHost(request, response) {
 	return true;
 }
 
-/**
- * @param {http.IncomingMessage} request 
- */
-function logRequest(request) {
-	requestLogStream.write(log.formatLog(JSON.stringify({
-		method: request.method,
-		url: request.url,
-		host: request.headers.host,
-		userAgent: request.headers["user-agent"]
-	})) + "\n");
-}
-
 const httpServer = http.createServer({});
 httpServer.on("request", (request, response) => {
 	if (!verifyHost(request, response))
@@ -111,9 +92,6 @@ httpServer.on("request", (request, response) => {
 		return;
 	}
 	url = _path.normalize(decodeURIComponent(url));
-
-	if (config.logRequests)
-		logRequest(request);
 
 	let path = _path.join("./static", url);
 	if (!fs.existsSync(path)) {
@@ -164,8 +142,8 @@ const io = new Server(httpServer, {
 	httpCompression: true
 });
 
-const players = new Players(config.playerInfoFile);
-const games = new Games(config.gameInfoFile);
+const players = new Players();
+const games = new Games();
 
 /**
  * @param {String} id 
