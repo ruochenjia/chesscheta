@@ -1,5 +1,5 @@
 # ChessCheata
-Online multiplayer / single player chess in HTML5 and nodeJS <br />
+Online chess in HTML5, that also supports single player and local games. <br />
 Link to website: https://www.chesscheata.gq
 
 ## Features
@@ -7,6 +7,7 @@ Link to website: https://www.chesscheata.gq
  - Support save and restore local games.
  - Support load local games with FEN string.
  - Available when internet disconnected (only works with Google Chrome desktop)
+ - Chess board colors can be changed in settings.
 
 ## Libraries Used
  - <a href="https://github.com/jhlywa/chess.js/" target="_blank">chess.js</a>
