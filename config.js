@@ -6,9 +6,8 @@ const config = {
 	httpPort: 80,
 	headers: clientConfig.headers,
 	allowedHosts: [
-		"chesscheata.gq",
-		"www.chesscheata.gq",
-		"a54.chesscheata.gq",
+		"chesscheta.gq",
+		"www.chesscheta.gq",
 		"localhost"
 	]
 };
