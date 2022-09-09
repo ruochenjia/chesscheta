@@ -2,5 +2,5 @@ package-lock.json
 node_modules
 .gitignore
 *.log
-players.json
-games.json
+test*
+nogit-*
