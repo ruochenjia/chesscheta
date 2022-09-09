@@ -17,30 +17,6 @@ Array.prototype.remove = function(element) {
 };
 
 /**
- * @param {String} path 
- * @returns {String}
- */
-function getIndexFile(path) {
-	const files = [
-		"index.html",
-		"index.htm",
-		"index.xml",
-		"index.xhtml",
-		"index.xht",
-		"index.txt",
-		"index.png",
-		"index.svg"
-	];
-
-	for (let f of files) {
-		let p = _path.join(path, f);
-		if (fs.existsSync(p))
-			return p;
-	}
-	return null;
-}
-
-/**
  * @param {number} code
  * @param {http.ServerResponse} response 
  */
@@ -61,50 +37,80 @@ function httpError(code, response) {
 }
 
 /**
- * @param {http.IncomingMessage} request 
- * @param {http.ServerResponse} response
+ * @param {String | undefined} host 
  */
-function verifyHost(request, response) {
-	let host = request.headers.host;
+function verifyHost(host) {
 	if (host == null) {
 		// always reject requests without the host header
-		httpError(403, response);
 		return false;
 	}
 
 	let hostname = host.split(":")[0];
 	if (!config.allowedHosts.includes(hostname)) {
 		// prevent unauthorized hosts
-		httpError(403, response);
 		return false;
 	}
+
 	return true;
+}
+
+/**
+ * @param {String | undefined} url 
+ */
+function getRequestUrl(url) {
+	if (url == null)
+		return null;
+
+	return _path.normalize(decodeURIComponent(url));
+}
+
+/**
+ * @param {String} url 
+ */
+function getRequestPath(url) {
+	let path = _path.join("./static", url);
+	if (!fs.existsSync(path))
+		return null;
+
+	if (fs.lstatSync(path, { bigint: true, throwIfNoEntry: true }).isDirectory()) {
+		for (let f of [
+			"index.html",
+			"index.htm",
+			"index.xml",
+			"index.xhtml",
+			"index.xht",
+			"index.txt",
+			"index.png",
+			"index.svg"
+		]) {
+			let p = _path.join(path, f);
+			if (fs.existsSync(p))
+				return p;
+		}
+
+		return null;
+	}
+
+	return path;
 }
 
 const httpServer = http.createServer({});
 httpServer.on("request", (request, response) => {
-	if (!verifyHost(request, response))
+	if (!verifyHost(request.headers.host)) {
+		httpError(403, response);
 		return;
+	}
 
-	let url = request.url;
+	let url = getRequestUrl(request.url);
 	if (url == null) {
 		httpError(400, response);
 		return;
 	}
-	url = _path.normalize(decodeURIComponent(url));
 
-	let path = _path.join("./static", url);
-	if (!fs.existsSync(path)) {
+	let path = getRequestPath(url);
+	if (path == null) {
 		httpError(404, response);
 		return;
-	}
-
-	if (fs.lstatSync(path, { bigint: true, throwIfNoEntry: true }).isDirectory()) {
-		path = getIndexFile(path);
-		if (path == null) {
-			httpError(404, response);
-			return;
-		}
 	}
 
 	let file = fs.readFileSync(path);
@@ -116,8 +122,9 @@ httpServer.on("request", (request, response) => {
 	response.writeHead(200, "", head);
 	response.end(file, "utf-8");
 });
-httpServer.on("upgrade", (request, socket, head) => {
 
+httpServer.on("upgrade", (request, socket, head) => {
+	// function not supported
 	socket.end();
 });
 
