@@ -23,14 +23,16 @@ Array.prototype.remove = function(element) {
 function httpError(code, response) {
 	let errorDoc = `./static/${code}.html`;
 	let msg = statusMessages[code.toString()];
+	let head = { ...config.headers };
+
 	if (fs.existsSync(errorDoc)) {
 		let file = fs.readFileSync(errorDoc, { encoding: "utf-8" });
-		let head = { ...config.headers };
 		head["Content-Type"] = "text/html";
 		response.writeHead(code, msg, head);
 		response.end(file, "utf-8");
 	} else {
-		response.writeHead(code, msg, config.headers);
+		head["Content-Type"] = "text/plain";
+		response.writeHead(code, msg, head);
 		response.write(msg, "utf-8");
 		response.end();
 	}
