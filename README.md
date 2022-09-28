@@ -1,6 +1,6 @@
-# ChessCheata
+# ChessCheta
 Online chess in HTML5, that also supports single player and local games. <br />
-Link to website: https://www.chesscheata.gq
+Link to website: https://www.chesscheta.gq
 
 ## Features
  - Support single player (vs computer), local multiplayer and online multiplayer games.
